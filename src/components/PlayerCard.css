@@ -1,0 +1,222 @@
+.player-card {
+  background: var(--surface);
+  border: 2px solid var(--player-color, var(--border));
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: opacity 0.2s;
+  position: relative;
+}
+
+.player-card.eliminated {
+  opacity: 0.35;
+  filter: grayscale(0.6);
+}
+
+.player-card.dead:not(.eliminated) {
+  border-color: var(--danger);
+  background: rgba(224, 82, 82, 0.05);
+}
+
+.player-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.player-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--player-color, var(--text-h));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: calc(100% - 32px);
+}
+
+.elim-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.elim-btn:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.elim-btn.elim-active {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.cmd-loss-notice {
+  font-size: 11px;
+  color: var(--danger);
+  text-align: center;
+  background: rgba(224, 82, 82, 0.1);
+  border-radius: 4px;
+  padding: 3px 6px;
+}
+
+.life-display {
+  text-align: center;
+}
+
+.life-number {
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-h);
+}
+
+@media (max-width: 700px) {
+  .life-number { font-size: 48px; }
+}
+
+.life-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.control-row {
+  display: flex;
+  gap: 6px;
+}
+
+.ctrl-btn {
+  flex: 1;
+  padding: 8px 4px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.1s;
+}
+
+.ctrl-btn.minus {
+  background: rgba(224, 82, 82, 0.08);
+  color: var(--danger);
+  border-color: rgba(224, 82, 82, 0.2);
+}
+
+.ctrl-btn.minus:hover:not(:disabled) {
+  background: rgba(224, 82, 82, 0.18);
+}
+
+.ctrl-btn.plus {
+  background: rgba(76, 175, 130, 0.08);
+  color: var(--success);
+  border-color: rgba(76, 175, 130, 0.2);
+}
+
+.ctrl-btn.plus:hover:not(:disabled) {
+  background: rgba(76, 175, 130, 0.18);
+}
+
+.ctrl-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Commander damage */
+.cmd-dmg-section {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+.cmd-dmg-toggle {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 4px 0;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.cmd-dmg-toggle:hover {
+  color: var(--text);
+}
+
+.cmd-dmg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.cmd-dmg-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cmd-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cmd-name {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmd-adj {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  transition: all 0.1s;
+}
+
+.cmd-adj:hover:not(:disabled) {
+  background: var(--border);
+}
+
+.cmd-adj:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.cmd-val {
+  min-width: 24px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.cmd-val.lethal {
+  color: var(--danger);
+}
