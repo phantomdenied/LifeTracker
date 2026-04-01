@@ -285,7 +285,7 @@ export default function GameBoard({ config, onEndGame }) {
           End {activePlayer?.name}'s Turn ▶
         </button>
 
-        {activePlayers.length === 1 && (
+        {players.length > 1 && activePlayers.length === 1 && (
           <div className="winner-banner">{activePlayers[0].name} wins!</div>
         )}
       </div>
@@ -372,7 +372,7 @@ export default function GameBoard({ config, onEndGame }) {
         ))}
       </div>
 
-      {activePlayers.length === 1 && (
+      {players.length > 1 && activePlayers.length === 1 && (
         <div className="winner-banner">
           {activePlayers[0].name} wins!
         </div>
