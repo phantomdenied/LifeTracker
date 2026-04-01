@@ -10,6 +10,42 @@
   position: relative;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+  overflow: hidden;
+}
+
+/* Commander art background */
+.player-card.has-art::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--art-url);
+  background-size: cover;
+  background-position: center 15%;
+  opacity: 0.18;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 10px;
+}
+
+.player-card.has-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(26, 29, 39, 0.55) 0%,
+    rgba(26, 29, 39, 0.75) 60%,
+    rgba(26, 29, 39, 0.92) 100%
+  );
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 10px;
+}
+
+/* Make all card children sit above the art layers */
+.player-card.has-art > * {
+  position: relative;
+  z-index: 1;
 }
 
 .player-card.eliminated {

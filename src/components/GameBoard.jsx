@@ -36,6 +36,7 @@ export default function GameBoard({ config, onEndGame }) {
   const [selectedWinner, setSelectedWinner] = useState(null)
   const [notes, setNotes] = useState('')
   const [activeTool, setActiveTool] = useState(null)
+  const [focusMode, setFocusMode] = useState(false)
   const { active: wakeLockActive, toggle: toggleWakeLock, supported: wakeLockSupported } = useWakeLock()
 
   const isCommander = config.format.id === 'commander'
@@ -158,6 +159,75 @@ export default function GameBoard({ config, onEndGame }) {
     onEndGame(players, selectedWinner, notes)
   }
 
+  const playerCardProps = (player) => ({
+    player,
+    allPlayers: players,
+    isCommander,
+    isActiveTurn: player.id === activePlayer?.id && !player.eliminated,
+    isMonarch: monarchId === player.id,
+    hasInitiative: initiativeId === player.id,
+    onAdjustLife: adjustLife,
+    onAdjustPoison: adjustPoison,
+    onAdjustCounter: adjustCounter,
+    onAdjustCommanderDamage: adjustCommanderDamage,
+    onToggleEliminated: toggleEliminated,
+    onGiveMonarch: giveMonarch,
+    onGiveInitiative: giveInitiative,
+  })
+
+  // ── Focus mode ─────────────────────────────────────────────────────────────
+  if (focusMode) {
+    return (
+      <div className="focus-mode">
+        {/* Slim top bar */}
+        <div className="focus-topbar">
+          <button className="focus-exit" onClick={() => setFocusMode(false)}>← All Players</button>
+          <div className="focus-turn-info">
+            <span className="turn-label">Turn {turnNumber}</span>
+            <span className="turn-player" style={{ color: activePlayer?.color }}>{activePlayer?.name}</span>
+          </div>
+          <div className="focus-storm">
+            <span className="storm-label">Storm</span>
+            <button className="storm-adj" onClick={() => setStorm(s => Math.max(0, s - 1))} disabled={storm === 0}>−</button>
+            <span className="storm-count">{storm}</span>
+            <button className="storm-adj" onClick={() => setStorm(s => s + 1)}>+</button>
+          </div>
+        </div>
+
+        {/* Focused player card */}
+        <div className="focus-card-wrap">
+          {activePlayer && <PlayerCard {...playerCardProps(activePlayer)} focusMode />}
+        </div>
+
+        {/* Thumbnail strip of other players */}
+        <div className="focus-strip">
+          {players.filter(p => p.id !== activePlayer?.id).map(p => (
+            <div
+              key={p.id}
+              className={`focus-thumb ${p.eliminated ? 'elim' : ''}`}
+              style={{ '--player-color': p.color, '--art-url': p.commanderArt ? `url(${p.commanderArt})` : 'none' }}
+            >
+              {p.commanderArt && <div className="thumb-art" />}
+              <span className="thumb-name" style={{ color: p.color }}>{p.name}</span>
+              <span className={`thumb-life ${p.life <= 0 ? 'dead' : ''}`}>{p.life}</span>
+              {p.poison > 0 && <span className="thumb-poison">☠ {p.poison}</span>}
+            </div>
+          ))}
+        </div>
+
+        {/* Next turn button */}
+        <button className="focus-next-turn" onClick={nextTurn}>
+          End {activePlayer?.name}'s Turn ▶
+        </button>
+
+        {activePlayers.length === 1 && (
+          <div className="winner-banner">{activePlayers[0].name} wins!</div>
+        )}
+      </div>
+    )
+  }
+
+  // ── Normal mode ────────────────────────────────────────────────────────────
   return (
     <div className="board">
       {/* Turn bar */}
@@ -184,6 +254,13 @@ export default function GameBoard({ config, onEndGame }) {
         </div>
 
         <div className="board-actions">
+          <button
+            className={`btn-secondary ${focusMode ? 'active' : ''}`}
+            onClick={() => setFocusMode(true)}
+            title="Focus mode"
+          >
+            Focus
+          </button>
           {wakeLockSupported && (
             <button
               className={`btn-icon ${wakeLockActive ? 'active' : ''}`}
@@ -225,22 +302,7 @@ export default function GameBoard({ config, onEndGame }) {
       {/* Player grid */}
       <div className={`player-grid players-${players.length}`}>
         {players.map(player => (
-          <PlayerCard
-            key={player.id}
-            player={player}
-            allPlayers={players}
-            isCommander={isCommander}
-            isActiveTurn={player.id === activePlayer?.id && !player.eliminated}
-            isMonarch={monarchId === player.id}
-            hasInitiative={initiativeId === player.id}
-            onAdjustLife={adjustLife}
-            onAdjustPoison={adjustPoison}
-            onAdjustCounter={adjustCounter}
-            onAdjustCommanderDamage={adjustCommanderDamage}
-            onToggleEliminated={toggleEliminated}
-            onGiveMonarch={giveMonarch}
-            onGiveInitiative={giveInitiative}
-          />
+          <PlayerCard key={player.id} {...playerCardProps(player)} />
         ))}
       </div>
 

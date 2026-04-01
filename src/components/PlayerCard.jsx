@@ -56,6 +56,13 @@ export default function PlayerCard({
 
   const recentLog = (player.lifeLog ?? []).slice(0, 5)
 
+  const artStyle = player.commanderArt
+    ? {
+        '--player-color': player.color,
+        '--art-url': `url(${player.commanderArt})`,
+      }
+    : { '--player-color': player.color }
+
   return (
     <div
       className={[
@@ -63,8 +70,9 @@ export default function PlayerCard({
         isEliminated ? 'eliminated' : '',
         isDead && !isEliminated ? 'dead' : '',
         isActiveTurn ? 'active-turn' : '',
+        player.commanderArt ? 'has-art' : '',
       ].filter(Boolean).join(' ')}
-      style={{ '--player-color': player.color }}
+      style={artStyle}
     >
       {/* Header */}
       <div className="player-header">

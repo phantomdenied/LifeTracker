@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import CommanderSearch from './CommanderSearch'
 import './GameSetup.css'
 
 const FORMATS = [
@@ -16,6 +17,8 @@ function defaultPlayers(count, startingLife) {
     id: i,
     name: `Player ${i + 1}`,
     color: PRESET_COLORS[i % PRESET_COLORS.length],
+    commanderName: null,
+    commanderArt: null,
     startingLife,
   }))
 }
@@ -26,6 +29,7 @@ export default function GameSetup({ onStart }) {
   const [players, setPlayers] = useState(() => defaultPlayers(4, 40))
 
   const format = FORMATS.find(f => f.id === formatId)
+  const isCommander = format.id === 'commander'
 
   function handleFormatChange(id) {
     const f = FORMATS.find(f => f.id === id)
@@ -45,6 +49,8 @@ export default function GameSetup({ onStart }) {
             id: prev.length + i,
             name: `Player ${prev.length + i + 1}`,
             color: PRESET_COLORS[(prev.length + i) % PRESET_COLORS.length],
+            commanderName: null,
+            commanderArt: null,
             startingLife: format.startingLife,
           })),
         ]
@@ -53,12 +59,8 @@ export default function GameSetup({ onStart }) {
     })
   }
 
-  function handleNameChange(id, name) {
-    setPlayers(prev => prev.map(p => p.id === id ? { ...p, name } : p))
-  }
-
-  function handleColorChange(id, color) {
-    setPlayers(prev => prev.map(p => p.id === id ? { ...p, color } : p))
+  function updatePlayer(id, fields) {
+    setPlayers(prev => prev.map(p => p.id === id ? { ...p, ...fields } : p))
   }
 
   return (
@@ -104,39 +106,50 @@ export default function GameSetup({ onStart }) {
           <label>Players</label>
           <div className="player-inputs">
             {players.map(p => (
-              <div key={p.id} className="player-input-row">
-                <div className="color-picker-wrap">
-                  <div
-                    className="color-swatch"
-                    style={{ background: p.color }}
-                  />
-                  <input
-                    type="color"
-                    className="color-input"
-                    value={p.color}
-                    onChange={e => handleColorChange(p.id, e.target.value)}
-                    title="Pick color"
-                  />
-                </div>
-                <input
-                  type="text"
-                  className="name-input"
-                  value={p.name}
-                  maxLength={20}
-                  onChange={e => handleNameChange(p.id, e.target.value)}
-                  placeholder={`Player ${p.id + 1}`}
-                />
-                <div className="preset-colors">
-                  {PRESET_COLORS.slice(0, 6).map(c => (
-                    <button
-                      key={c}
-                      className={`preset-dot ${p.color === c ? 'selected' : ''}`}
-                      style={{ background: c }}
-                      onClick={() => handleColorChange(p.id, c)}
-                      aria-label={`Set color ${c}`}
+              <div key={p.id} className="player-block">
+                <div className="player-input-row">
+                  <div className="color-picker-wrap">
+                    <div className="color-swatch" style={{ background: p.color }} />
+                    <input
+                      type="color"
+                      className="color-input"
+                      value={p.color}
+                      onChange={e => updatePlayer(p.id, { color: e.target.value })}
+                      title="Pick color"
                     />
-                  ))}
+                  </div>
+                  <input
+                    type="text"
+                    className="name-input"
+                    value={p.name}
+                    maxLength={20}
+                    onChange={e => updatePlayer(p.id, { name: e.target.value })}
+                    placeholder={`Player ${p.id + 1}`}
+                  />
+                  <div className="preset-colors">
+                    {PRESET_COLORS.slice(0, 6).map(c => (
+                      <button
+                        key={c}
+                        className={`preset-dot ${p.color === c ? 'selected' : ''}`}
+                        style={{ background: c }}
+                        onClick={() => updatePlayer(p.id, { color: c })}
+                        aria-label={`Set color ${c}`}
+                      />
+                    ))}
+                  </div>
                 </div>
+
+                {isCommander && (
+                  <div className="commander-row">
+                    <span className="commander-label">Commander</span>
+                    <CommanderSearch
+                      value={p.commanderName}
+                      artUrl={p.commanderArt}
+                      onSelect={(name, art) => updatePlayer(p.id, { commanderName: name, commanderArt: art })}
+                      onClear={() => updatePlayer(p.id, { commanderName: null, commanderArt: null })}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
