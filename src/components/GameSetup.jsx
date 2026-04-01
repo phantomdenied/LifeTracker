@@ -6,13 +6,16 @@ const FORMATS = [
   { id: 'standard', label: 'Standard / Regular', startingLife: 20, minPlayers: 2, maxPlayers: 4 },
 ]
 
-const COLORS = ['#7c6af7', '#e05252', '#4caf82', '#e09a3a', '#4a9fd4', '#c45fc4']
+const PRESET_COLORS = [
+  '#7c6af7', '#e05252', '#4caf82', '#e09a3a', '#4a9fd4', '#c45fc4',
+  '#f06292', '#ff8a65', '#80cbc4', '#aed581',
+]
 
 function defaultPlayers(count, startingLife) {
   return Array.from({ length: count }, (_, i) => ({
     id: i,
     name: `Player ${i + 1}`,
-    color: COLORS[i % COLORS.length],
+    color: PRESET_COLORS[i % PRESET_COLORS.length],
     startingLife,
   }))
 }
@@ -41,7 +44,7 @@ export default function GameSetup({ onStart }) {
           ...Array.from({ length: count - prev.length }, (_, i) => ({
             id: prev.length + i,
             name: `Player ${prev.length + i + 1}`,
-            color: COLORS[(prev.length + i) % COLORS.length],
+            color: PRESET_COLORS[(prev.length + i) % PRESET_COLORS.length],
             startingLife: format.startingLife,
           })),
         ]
@@ -54,8 +57,8 @@ export default function GameSetup({ onStart }) {
     setPlayers(prev => prev.map(p => p.id === id ? { ...p, name } : p))
   }
 
-  function handleStart() {
-    onStart({ format, players })
+  function handleColorChange(id, color) {
+    setPlayers(prev => prev.map(p => p.id === id ? { ...p, color } : p))
   }
 
   return (
@@ -98,23 +101,48 @@ export default function GameSetup({ onStart }) {
         </div>
 
         <div className="setup-section">
-          <label>Player Names</label>
+          <label>Players</label>
           <div className="player-inputs">
             {players.map(p => (
               <div key={p.id} className="player-input-row">
-                <span className="player-color-dot" style={{ background: p.color }} />
+                <div className="color-picker-wrap">
+                  <div
+                    className="color-swatch"
+                    style={{ background: p.color }}
+                  />
+                  <input
+                    type="color"
+                    className="color-input"
+                    value={p.color}
+                    onChange={e => handleColorChange(p.id, e.target.value)}
+                    title="Pick color"
+                  />
+                </div>
                 <input
                   type="text"
+                  className="name-input"
                   value={p.name}
                   maxLength={20}
                   onChange={e => handleNameChange(p.id, e.target.value)}
+                  placeholder={`Player ${p.id + 1}`}
                 />
+                <div className="preset-colors">
+                  {PRESET_COLORS.slice(0, 6).map(c => (
+                    <button
+                      key={c}
+                      className={`preset-dot ${p.color === c ? 'selected' : ''}`}
+                      style={{ background: c }}
+                      onClick={() => handleColorChange(p.id, c)}
+                      aria-label={`Set color ${c}`}
+                    />
+                  ))}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        <button className="start-btn" onClick={handleStart}>
+        <button className="start-btn" onClick={() => onStart({ format, players })}>
           Start Game
         </button>
       </div>
