@@ -601,6 +601,85 @@
   flex: 1;
 }
 
+/* ── Inline widget blocks ─────────────────────────────────── */
+.widget-block {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.widget-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+}
+
+.widget-remove {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  touch-action: manipulation;
+  transition: background 0.1s, color 0.1s;
+}
+
+.widget-remove:hover { background: var(--surface-2); color: var(--danger); }
+
+/* ── Widget picker (FAB sheet) ─────────────────────────────── */
+.widget-picker {
+  display: flex;
+  flex-direction: column;
+}
+
+.widget-pick-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+  text-align: left;
+  touch-action: manipulation;
+  transition: background 0.1s;
+  min-height: 52px;
+}
+
+.widget-pick-btn:last-child { border-bottom: none; }
+.widget-pick-btn:hover { background: var(--surface-2); }
+.widget-pick-btn:active { background: var(--border); }
+
+.widget-pick-btn.active { color: var(--accent-hover); }
+.widget-pick-btn.action { color: var(--text-muted); }
+
+.wpick-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.widget-pick-btn.active .wpick-badge { color: var(--success); }
+
 /* FAB */
 .fab {
   position: absolute;

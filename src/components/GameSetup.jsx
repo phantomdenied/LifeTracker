@@ -3,8 +3,8 @@ import CommanderSearch from './CommanderSearch'
 import './GameSetup.css'
 
 const FORMATS = [
-  { id: 'commander', label: 'Commander', startingLife: 40, minPlayers: 2, maxPlayers: 6 },
-  { id: 'standard', label: 'Standard / Regular', startingLife: 20, minPlayers: 2, maxPlayers: 4 },
+  { id: 'commander', label: 'Commander', startingLife: 40, minPlayers: 1, maxPlayers: 6 },
+  { id: 'standard', label: 'Standard / Regular', startingLife: 20, minPlayers: 1, maxPlayers: 4 },
 ]
 
 const PRESET_COLORS = [
@@ -28,8 +28,8 @@ function defaultPlayers(count, startingLife) {
 
 export default function GameSetup({ onStart, lastConfig }) {
   const [formatId, setFormatId] = useState('commander')
-  const [playerCount, setPlayerCount] = useState(4)
-  const [players, setPlayers] = useState(() => defaultPlayers(4, 40))
+  const [playerCount, setPlayerCount] = useState(1)
+  const [players, setPlayers] = useState(() => defaultPlayers(1, 40))
 
   const format = FORMATS.find(f => f.id === formatId)
   const isCommander = format.id === 'commander'

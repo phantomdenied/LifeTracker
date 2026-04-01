@@ -24,14 +24,14 @@ const TOKENS = [
   { key: 'spirit',    label: '👻 Spirit' },
 ]
 
-const SHEET_SECTIONS = [
-  { key: 'custom',   label: 'Custom Adjust' },
-  { key: 'poison',   label: 'Poison / Infect' },
-  { key: 'cmdtax',   label: 'Commander Tax', commanderOnly: true },
-  { key: 'cmddmg',   label: 'Commander Damage', commanderOnly: true },
-  { key: 'tokens',   label: 'Token Tray' },
-  { key: 'counters', label: 'Counters' },
-  { key: 'monarch',  label: 'Monarch & Initiative' },
+// Widgets that persist on the card once added
+const PERSISTENT_WIDGETS = [
+  { key: 'poison',   label: '☠ Poison' },
+  { key: 'counters', label: '◈ Counters' },
+  { key: 'tokens',   label: '🎭 Tokens' },
+  { key: 'cmddmg',   label: '⚔ Cmd Damage', commanderOnly: true },
+  { key: 'cmdtax',   label: '📜 Cmd Tax',    commanderOnly: true },
+  { key: 'monarch',  label: '♛ Monarch' },
 ]
 
 export default function PlayerCard({
@@ -48,35 +48,42 @@ export default function PlayerCard({
   onToggleEliminated,
   onGiveMonarch,
   onGiveInitiative,
+  onToggleWidget,
   focusMode,
 }) {
-  const [sheetOpen, setSheetOpen] = useState(false)
-  const [activeSection, setActiveSection] = useState(null)
+  const [fabOpen, setFabOpen]       = useState(false)
+  const [customOpen, setCustomOpen] = useState(false)
   const [customInput, setCustomInput] = useState('')
   const inputRef = useRef(null)
 
-  const opponents = allPlayers.filter(p => p.id !== player.id)
+  const opponents   = allPlayers.filter(p => p.id !== player.id)
   const isEliminated = player.eliminated
-  const cmdDmgLoss = isCommander
+  const cmdDmgLoss  = isCommander
     ? opponents.find(op => (player.commanderDamage?.[op.id] ?? 0) >= 21)
     : null
-  const poisonDead = (player.poison ?? 0) >= 10
-  const isDead = player.life <= 0 || !!cmdDmgLoss || poisonDead
+  const poisonDead  = (player.poison ?? 0) >= 10
+  const isDead      = player.life <= 0 || !!cmdDmgLoss || poisonDead
   const commanderTax = Math.max(0, ((player.commanderCasts ?? 0) - 1) * 2)
-  const recentLog = (player.lifeLog ?? []).slice(0, 3)
+  const recentLog   = (player.lifeLog ?? []).slice(0, 3)
+  const activeWidgets = player.activeWidgets ?? []
 
-  const hasArt = !!(player.commanderArt || player.commanderArt2)
+  const hasArt  = !!(player.commanderArt || player.commanderArt2)
   const artStyle = {
     '--player-color': player.color,
     ...(player.commanderArt  ? { '--art-url':  `url(${player.commanderArt})`  } : {}),
     ...(player.commanderArt2 ? { '--art-url2': `url(${player.commanderArt2})` } : {}),
   }
 
+  const visibleWidgets = PERSISTENT_WIDGETS.filter(w =>
+    (!w.commanderOnly || isCommander) && activeWidgets.includes(w.key)
+  )
+
   function applyCustom(sign) {
     const val = parseInt(customInput, 10)
     if (!isNaN(val) && val > 0) {
       onAdjustLife(player.id, sign * val)
       setCustomInput('')
+      setCustomOpen(false)
       inputRef.current?.blur()
     }
   }
@@ -86,12 +93,10 @@ export default function PlayerCard({
     if (e.key === '-') { e.preventDefault(); applyCustom(-1) }
   }
 
-  function openSection(key) {
-    setActiveSection(key)
-    setSheetOpen(true)
+  function toggleWidget(key) {
+    onToggleWidget(player.id, key)
+    setFabOpen(false)
   }
-
-  const visibleSections = SHEET_SECTIONS.filter(s => !s.commanderOnly || isCommander)
 
   return (
     <>
@@ -115,8 +120,8 @@ export default function PlayerCard({
           {isActiveTurn && <span className="turn-pip" />}
           <span className="player-name">{player.name}</span>
           <div className="header-badges">
-            {isMonarch    && <span className="badge monarch-badge" title="Monarch">♛</span>}
-            {hasInitiative && <span className="badge init-badge"   title="Initiative">⚔</span>}
+            {isMonarch     && <span className="badge monarch-badge" title="Monarch">♛</span>}
+            {hasInitiative && <span className="badge init-badge"    title="Initiative">⚔</span>}
             {(player.poison ?? 0) > 0 && (
               <span className="badge poison-badge">☠{player.poison}</span>
             )}
@@ -177,185 +182,213 @@ export default function PlayerCard({
           </div>
         </div>
 
+        {/* Custom adjust inline (shown when triggered from FAB) */}
+        {customOpen && (
+          <div className="widget-block">
+            <div className="widget-header">
+              <span className="widget-label">Custom Adjust</span>
+              <button className="widget-remove" onClick={() => { setCustomOpen(false); setCustomInput('') }}>✕</button>
+            </div>
+            <div className="custom-row">
+              <button className="ctrl-btn minus custom-apply" onClick={() => applyCustom(-1)} disabled={!customInput}>−</button>
+              <input
+                ref={inputRef}
+                className="custom-input"
+                type="number"
+                inputMode="numeric"
+                placeholder="amount"
+                value={customInput}
+                onChange={e => setCustomInput(e.target.value.replace(/[^0-9]/g, ''))}
+                onKeyDown={handleCustomKey}
+                autoFocus
+              />
+              <button className="ctrl-btn plus custom-apply" onClick={() => applyCustom(1)} disabled={!customInput}>+</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Inline persistent widgets ── */}
+
+        {/* Poison */}
+        {activeWidgets.includes('poison') && (
+          <div className="widget-block">
+            <div className="widget-header">
+              <span className="widget-label">Poison / Infect — {player.poison ?? 0}/10</span>
+              <button className="widget-remove" onClick={() => onToggleWidget(player.id, 'poison')}>✕</button>
+            </div>
+            <div className="counter-row">
+              <button className="counter-adj" onClick={() => onAdjustPoison(player.id, -1)} disabled={(player.poison ?? 0) <= 0}>−</button>
+              <div className="poison-pips">
+                {Array.from({ length: 10 }, (_, i) => (
+                  <span
+                    key={i}
+                    className={`pip ${i < (player.poison ?? 0) ? 'filled' : ''} ${i >= 9 ? 'lethal-pip' : ''}`}
+                    onClick={() => {
+                      const cur = player.poison ?? 0
+                      onAdjustPoison(player.id, i < cur ? -(cur - i) : (i + 1 - cur))
+                    }}
+                  />
+                ))}
+              </div>
+              <button className="counter-adj" onClick={() => onAdjustPoison(player.id, 1)} disabled={(player.poison ?? 0) >= 10}>+</button>
+            </div>
+          </div>
+        )}
+
+        {/* Counters */}
+        {activeWidgets.includes('counters') && (
+          <div className="widget-block">
+            <div className="widget-header">
+              <span className="widget-label">Counters</span>
+              <button className="widget-remove" onClick={() => onToggleWidget(player.id, 'counters')}>✕</button>
+            </div>
+            <div className="extras-list">
+              {EXTRA_COUNTERS.map(({ key, label, color }) => (
+                <div key={key} className="extra-row">
+                  <span className="extra-label" style={{ color }}>{label}</span>
+                  <button className="counter-adj" onClick={() => onAdjustCounter(player.id, key, -1)} disabled={(player.counters?.[key] ?? 0) <= 0}>−</button>
+                  <span className="extra-val">{player.counters?.[key] ?? 0}</span>
+                  <button className="counter-adj" onClick={() => onAdjustCounter(player.id, key, 1)}>+</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tokens */}
+        {activeWidgets.includes('tokens') && (
+          <div className="widget-block">
+            <div className="widget-header">
+              <span className="widget-label">Token Tray</span>
+              <button className="widget-remove" onClick={() => onToggleWidget(player.id, 'tokens')}>✕</button>
+            </div>
+            <div className="tokens-grid">
+              {TOKENS.map(({ key, label }) => {
+                const count = player.tokens?.[key] ?? 0
+                return (
+                  <div key={key} className="token-item">
+                    <span className="token-label">{label}</span>
+                    <div className="token-controls">
+                      <button className="counter-adj" onClick={() => onAdjustCounter(player.id, `token_${key}`, -1)} disabled={count <= 0}>−</button>
+                      <span className="extra-val">{count}</span>
+                      <button className="counter-adj" onClick={() => onAdjustCounter(player.id, `token_${key}`, 1)}>+</button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Commander Tax */}
+        {activeWidgets.includes('cmdtax') && isCommander && (
+          <div className="widget-block">
+            <div className="widget-header">
+              <span className="widget-label">Commander Tax — {commanderTax > 0 ? `+${commanderTax}` : 'None'}</span>
+              <button className="widget-remove" onClick={() => onToggleWidget(player.id, 'cmdtax')}>✕</button>
+            </div>
+            <div className="counter-row">
+              <button className="counter-adj" onClick={() => onAdjustCounter(player.id, 'commanderCasts', -1)} disabled={(player.commanderCasts ?? 0) <= 0}>−</button>
+              <span className="extra-val">{player.commanderCasts ?? 0} cast{(player.commanderCasts ?? 0) !== 1 ? 's' : ''}</span>
+              <button className="counter-adj" onClick={() => onAdjustCounter(player.id, 'commanderCasts', 1)}>+</button>
+            </div>
+          </div>
+        )}
+
+        {/* Commander Damage */}
+        {activeWidgets.includes('cmddmg') && isCommander && (
+          <div className="widget-block">
+            <div className="widget-header">
+              <span className="widget-label">Commander Damage</span>
+              <button className="widget-remove" onClick={() => onToggleWidget(player.id, 'cmddmg')}>✕</button>
+            </div>
+            <div className="cmd-dmg-list">
+              {opponents.map(op => {
+                const dmg = player.commanderDamage?.[op.id] ?? 0
+                return (
+                  <div key={op.id} className="cmd-dmg-row">
+                    <span className="cmd-dot" style={{ background: op.color }} />
+                    <span className="cmd-name">{op.name}</span>
+                    <button className="cmd-adj" onClick={() => onAdjustCommanderDamage(player.id, op.id, -1)} disabled={dmg <= 0}>−</button>
+                    <span className={`cmd-val ${dmg >= 21 ? 'lethal' : ''}`}>{dmg}</span>
+                    <button className="cmd-adj" onClick={() => onAdjustCommanderDamage(player.id, op.id, 1)}>+</button>
+                  </div>
+                )
+              })}
+              {opponents.length === 0 && <p className="sheet-empty">No opponents to track.</p>}
+            </div>
+          </div>
+        )}
+
+        {/* Monarch & Initiative */}
+        {activeWidgets.includes('monarch') && (
+          <div className="widget-block">
+            <div className="widget-header">
+              <span className="widget-label">Monarch & Initiative</span>
+              <button className="widget-remove" onClick={() => onToggleWidget(player.id, 'monarch')}>✕</button>
+            </div>
+            <div className="token-row">
+              <button
+                className={`token-btn ${isMonarch ? 'token-active' : ''}`}
+                onClick={() => onGiveMonarch(player.id)}
+              >
+                ♛ {isMonarch ? 'Monarch (you)' : 'Give Monarch'}
+              </button>
+              <button
+                className={`token-btn ${hasInitiative ? 'token-active init' : ''}`}
+                onClick={() => onGiveInitiative(player.id)}
+              >
+                ⚔ {hasInitiative ? 'Initiative (you)' : 'Give Initiative'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* FAB */}
         <button
           className="fab"
-          onClick={() => { setActiveSection(null); setSheetOpen(true) }}
+          onClick={() => !isEliminated && setFabOpen(true)}
           disabled={isEliminated}
-          aria-label="More options"
+          aria-label="Add features"
         >
           +
         </button>
       </div>
 
-      {/* Bottom sheet */}
-      {sheetOpen && (
-        <div className="sheet-overlay" onClick={e => e.target === e.currentTarget && setSheetOpen(false)}>
+      {/* FAB widget picker overlay */}
+      {fabOpen && (
+        <div className="sheet-overlay" onClick={e => e.target === e.currentTarget && setFabOpen(false)}>
           <div className="sheet">
             <div className="sheet-handle" />
-
             <div className="sheet-header">
               <span className="sheet-title" style={{ color: player.color }}>{player.name}</span>
-              <button className="sheet-close" onClick={() => setSheetOpen(false)}>✕</button>
+              <button className="sheet-close" onClick={() => setFabOpen(false)}>✕</button>
             </div>
+            <div className="widget-picker">
+              {/* Custom adjust — action, not a persistent widget */}
+              <button
+                className="widget-pick-btn action"
+                onClick={() => { setCustomOpen(v => !v); setFabOpen(false) }}
+              >
+                <span>✏ Custom Adjust</span>
+                <span className="wpick-badge">{customOpen ? 'Hide' : 'Open'}</span>
+              </button>
 
-            {/* Section picker */}
-            {!activeSection && (
-              <div className="sheet-menu">
-                {visibleSections.map(s => (
-                  <button key={s.key} className="sheet-menu-item" onClick={() => setActiveSection(s.key)}>
-                    {s.label}
-                    <span className="sheet-menu-arrow">›</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Custom adjust */}
-            {activeSection === 'custom' && (
-              <div className="sheet-section">
-                <button className="sheet-back" onClick={() => setActiveSection(null)}>‹ Back</button>
-                <p className="sheet-section-title">Custom Adjust</p>
-                <div className="custom-row">
-                  <button className="ctrl-btn minus custom-apply" onClick={() => applyCustom(-1)} disabled={!customInput}>−</button>
-                  <input
-                    ref={inputRef}
-                    className="custom-input"
-                    type="number"
-                    inputMode="numeric"
-                    placeholder="amount"
-                    value={customInput}
-                    onChange={e => setCustomInput(e.target.value.replace(/[^0-9]/g, ''))}
-                    onKeyDown={handleCustomKey}
-                    autoFocus
-                  />
-                  <button className="ctrl-btn plus custom-apply" onClick={() => applyCustom(1)} disabled={!customInput}>+</button>
-                </div>
-              </div>
-            )}
-
-            {/* Poison */}
-            {activeSection === 'poison' && (
-              <div className="sheet-section">
-                <button className="sheet-back" onClick={() => setActiveSection(null)}>‹ Back</button>
-                <p className="sheet-section-title">Poison / Infect — {player.poison ?? 0}/10</p>
-                <div className="counter-row">
-                  <button className="counter-adj" onClick={() => onAdjustPoison(player.id, -1)} disabled={(player.poison ?? 0) <= 0}>−</button>
-                  <div className="poison-pips">
-                    {Array.from({ length: 10 }, (_, i) => (
-                      <span
-                        key={i}
-                        className={`pip ${i < (player.poison ?? 0) ? 'filled' : ''} ${i >= 9 ? 'lethal-pip' : ''}`}
-                        onClick={() => {
-                          const cur = player.poison ?? 0
-                          onAdjustPoison(player.id, i < cur ? -(cur - i) : (i + 1 - cur))
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <button className="counter-adj" onClick={() => onAdjustPoison(player.id, 1)} disabled={(player.poison ?? 0) >= 10}>+</button>
-                </div>
-              </div>
-            )}
-
-            {/* Commander tax */}
-            {activeSection === 'cmdtax' && isCommander && (
-              <div className="sheet-section">
-                <button className="sheet-back" onClick={() => setActiveSection(null)}>‹ Back</button>
-                <p className="sheet-section-title">Commander Tax — {commanderTax > 0 ? `+${commanderTax}` : 'None'}</p>
-                <div className="counter-row">
-                  <button className="counter-adj" onClick={() => onAdjustCounter(player.id, 'commanderCasts', -1)} disabled={(player.commanderCasts ?? 0) <= 0}>−</button>
-                  <span className="extra-val">{player.commanderCasts ?? 0} cast{(player.commanderCasts ?? 0) !== 1 ? 's' : ''}</span>
-                  <button className="counter-adj" onClick={() => onAdjustCounter(player.id, 'commanderCasts', 1)}>+</button>
-                </div>
-              </div>
-            )}
-
-            {/* Commander damage */}
-            {activeSection === 'cmddmg' && isCommander && (
-              <div className="sheet-section">
-                <button className="sheet-back" onClick={() => setActiveSection(null)}>‹ Back</button>
-                <p className="sheet-section-title">Commander Damage Received</p>
-                <div className="cmd-dmg-list">
-                  {opponents.map(op => {
-                    const dmg = player.commanderDamage?.[op.id] ?? 0
-                    return (
-                      <div key={op.id} className="cmd-dmg-row">
-                        <span className="cmd-dot" style={{ background: op.color }} />
-                        <span className="cmd-name">{op.name}</span>
-                        <button className="cmd-adj" onClick={() => onAdjustCommanderDamage(player.id, op.id, -1)} disabled={dmg <= 0}>−</button>
-                        <span className={`cmd-val ${dmg >= 21 ? 'lethal' : ''}`}>{dmg}</span>
-                        <button className="cmd-adj" onClick={() => onAdjustCommanderDamage(player.id, op.id, 1)}>+</button>
-                      </div>
-                    )
-                  })}
-                  {opponents.length === 0 && <p className="sheet-empty">No opponents to track.</p>}
-                </div>
-              </div>
-            )}
-
-            {/* Tokens */}
-            {activeSection === 'tokens' && (
-              <div className="sheet-section">
-                <button className="sheet-back" onClick={() => setActiveSection(null)}>‹ Back</button>
-                <p className="sheet-section-title">Token Tray</p>
-                <div className="tokens-grid">
-                  {TOKENS.map(({ key, label }) => {
-                    const count = player.tokens?.[key] ?? 0
-                    return (
-                      <div key={key} className="token-item">
-                        <span className="token-label">{label}</span>
-                        <div className="token-controls">
-                          <button className="counter-adj" onClick={() => onAdjustCounter(player.id, `token_${key}`, -1)} disabled={count <= 0}>−</button>
-                          <span className="extra-val">{count}</span>
-                          <button className="counter-adj" onClick={() => onAdjustCounter(player.id, `token_${key}`, 1)}>+</button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Counters */}
-            {activeSection === 'counters' && (
-              <div className="sheet-section">
-                <button className="sheet-back" onClick={() => setActiveSection(null)}>‹ Back</button>
-                <p className="sheet-section-title">Counters</p>
-                <div className="extras-list">
-                  {EXTRA_COUNTERS.map(({ key, label, color }) => (
-                    <div key={key} className="extra-row">
-                      <span className="extra-label" style={{ color }}>{label}</span>
-                      <button className="counter-adj" onClick={() => onAdjustCounter(player.id, key, -1)} disabled={(player.counters?.[key] ?? 0) <= 0}>−</button>
-                      <span className="extra-val">{player.counters?.[key] ?? 0}</span>
-                      <button className="counter-adj" onClick={() => onAdjustCounter(player.id, key, 1)}>+</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Monarch & Initiative */}
-            {activeSection === 'monarch' && (
-              <div className="sheet-section">
-                <button className="sheet-back" onClick={() => setActiveSection(null)}>‹ Back</button>
-                <p className="sheet-section-title">Monarch & Initiative</p>
-                <div className="token-row">
+              {/* Persistent widget toggles */}
+              {PERSISTENT_WIDGETS.filter(w => !w.commanderOnly || isCommander).map(w => {
+                const active = activeWidgets.includes(w.key)
+                return (
                   <button
-                    className={`token-btn ${isMonarch ? 'token-active' : ''}`}
-                    onClick={() => onGiveMonarch(player.id)}
+                    key={w.key}
+                    className={`widget-pick-btn ${active ? 'active' : ''}`}
+                    onClick={() => toggleWidget(w.key)}
                   >
-                    ♛ {isMonarch ? 'Monarch (you)' : 'Give Monarch'}
+                    <span>{w.label}</span>
+                    <span className="wpick-badge">{active ? 'On card ✓' : 'Add to card'}</span>
                   </button>
-                  <button
-                    className={`token-btn ${hasInitiative ? 'token-active init' : ''}`}
-                    onClick={() => onGiveInitiative(player.id)}
-                  >
-                    ⚔ {hasInitiative ? 'Initiative (you)' : 'Give Initiative'}
-                  </button>
-                </div>
-              </div>
-            )}
+                )
+              })}
+            </div>
           </div>
         </div>
       )}

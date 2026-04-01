@@ -20,6 +20,7 @@ function initPlayers(config) {
     tokens: {},
     lifeLog: [],
     eliminated: false,
+    activeWidgets: [],
   }))
 }
 
@@ -142,6 +143,17 @@ export default function GameBoard({ config, onEndGame }) {
     ))
   }, [])
 
+  function toggleWidget(playerId, widgetKey) {
+    setPlayers(prev => prev.map(p => {
+      if (p.id !== playerId) return p
+      const current = p.activeWidgets ?? []
+      const next = current.includes(widgetKey)
+        ? current.filter(k => k !== widgetKey)
+        : [...current, widgetKey]
+      return { ...p, activeWidgets: next }
+    }))
+  }
+
   function giveMonarch(playerId) {
     setMonarchId(prev => prev === playerId ? null : playerId)
   }
@@ -179,6 +191,7 @@ export default function GameBoard({ config, onEndGame }) {
     onToggleEliminated: toggleEliminated,
     onGiveMonarch: giveMonarch,
     onGiveInitiative: giveInitiative,
+    onToggleWidget: toggleWidget,
   })
 
   // ── Focus mode ─────────────────────────────────────────────────────────────
