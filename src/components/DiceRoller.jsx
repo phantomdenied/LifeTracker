@@ -4,27 +4,43 @@ import './DiceRoller.css'
 const DICE = [4, 6, 8, 10, 12, 20, 100]
 
 export default function DiceRoller() {
-  const [results, setResults] = useState([])
-  const [coin, setCoin] = useState(null) // 'H' | 'T' | null
-  const [rolling, setRolling] = useState(false)
-  const [flipping, setFlipping] = useState(false)
+  const [results, setResults]     = useState([])
+  const [coin, setCoin]           = useState(null)   // 'H' | 'T' | null
+  const [rolling, setRolling]     = useState(false)
+  const [flipping, setFlipping]   = useState(false)
+  const [animSides, setAnimSides] = useState(null)
+  const [animNum, setAnimNum]     = useState(null)
+  const [coinPhase, setCoinPhase] = useState('idle') // 'idle' | 'spinning' | 'result'
 
   function roll(sides) {
     setRolling(true)
-    setTimeout(() => {
-      const result = Math.floor(Math.random() * sides) + 1
-      setResults(prev => [{ sides, result, id: Date.now() }, ...prev.slice(0, 9)])
-      setRolling(false)
-    }, 120)
+    setAnimSides(sides)
+    setAnimNum(null)
+    let ticks = 0
+    const interval = setInterval(() => {
+      setAnimNum(Math.floor(Math.random() * sides) + 1)
+      ticks++
+      if (ticks >= 10) {
+        clearInterval(interval)
+        const result = Math.floor(Math.random() * sides) + 1
+        setResults(prev => [{ sides, result, id: Date.now() }, ...prev.slice(0, 9)])
+        setAnimNum(null)
+        setAnimSides(null)
+        setRolling(false)
+      }
+    }, 55)
   }
 
   function flipCoin() {
     setFlipping(true)
     setCoin(null)
+    setCoinPhase('spinning')
     setTimeout(() => {
-      setCoin(Math.random() < 0.5 ? 'H' : 'T')
+      const result = Math.random() < 0.5 ? 'H' : 'T'
+      setCoin(result)
+      setCoinPhase('result')
       setFlipping(false)
-    }, 300)
+    }, 650)
   }
 
   return (
@@ -34,23 +50,32 @@ export default function DiceRoller() {
           {DICE.map(d => (
             <button
               key={d}
-              className="die-btn"
+              className={`die-btn ${rolling && animSides === d ? 'rolling' : ''}`}
               onClick={() => roll(d)}
               disabled={rolling}
             >
-              d{d}
+              {rolling && animSides === d
+                ? <span className="die-anim-num">{animNum ?? '?'}</span>
+                : `d${d}`
+              }
             </button>
           ))}
         </div>
 
-        <button
-          className={`coin-btn ${flipping ? 'flipping' : ''} ${coin ? (coin === 'H' ? 'heads' : 'tails') : ''}`}
-          onClick={flipCoin}
-          disabled={flipping}
-          title="Flip a coin"
-        >
-          {flipping ? '…' : coin === 'H' ? 'Heads' : coin === 'T' ? 'Tails' : 'Flip'}
-        </button>
+        <div className={`coin-wrap ${coinPhase}`}>
+          <button
+            className="coin-btn"
+            onClick={flipCoin}
+            disabled={flipping}
+            title="Flip a coin"
+          >
+            <div className={`coin-inner ${coinPhase === 'spinning' ? 'coin-spin' : ''}`}>
+              {coinPhase === 'idle'   && 'Flip'}
+              {coinPhase === 'spinning' && '?'}
+              {coinPhase === 'result' && (coin === 'H' ? 'Heads' : 'Tails')}
+            </div>
+          </button>
+        </div>
       </div>
 
       {results.length > 0 && (

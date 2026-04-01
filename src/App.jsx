@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import GameSetup from './components/GameSetup'
 import GameBoard from './components/GameBoard'
 import GameHistory from './components/GameHistory'
@@ -9,6 +9,12 @@ export default function App() {
   const [screen, setScreen] = useState('setup')
   const [gameConfig, setGameConfig] = useState(null)
   const [lastConfig, setLastConfig] = useState(null)
+  const [theme, setTheme] = useState(() => localStorage.getItem('mtg-theme') ?? 'dark')
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('mtg-theme', theme)
+  }, [theme])
 
   const startGame = useCallback((config) => {
     setGameConfig(config)
@@ -40,6 +46,13 @@ export default function App() {
             disabled={screen === 'game'}
           >
             History
+          </button>
+          <button
+            className="theme-toggle"
+            onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {theme === 'dark' ? '☀' : '🌙'}
           </button>
         </nav>
       </header>

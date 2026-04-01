@@ -21,6 +21,10 @@ function initPlayers(config) {
     lifeLog: [],
     eliminated: false,
     activeWidgets: [],
+    selectedTokens: [],
+    activeEmblems: [],
+    ringStage: 1,
+    dayNightState: 'day',
   }))
 }
 
@@ -154,6 +158,44 @@ export default function GameBoard({ config, onEndGame }) {
     }))
   }
 
+  function toggleSelectedToken(playerId, tokenKey) {
+    setPlayers(prev => prev.map(p => {
+      if (p.id !== playerId) return p
+      const current = p.selectedTokens ?? []
+      const next = current.includes(tokenKey)
+        ? current.filter(k => k !== tokenKey)
+        : [...current, tokenKey]
+      return { ...p, selectedTokens: next }
+    }))
+  }
+
+  function toggleEmblem(playerId, emblemKey) {
+    setPlayers(prev => prev.map(p => {
+      if (p.id !== playerId) return p
+      const current = p.activeEmblems ?? []
+      const next = current.includes(emblemKey)
+        ? current.filter(k => k !== emblemKey)
+        : [...current, emblemKey]
+      return { ...p, activeEmblems: next }
+    }))
+  }
+
+  function adjustRingStage(playerId, delta) {
+    setPlayers(prev => prev.map(p =>
+      p.id === playerId
+        ? { ...p, ringStage: Math.min(4, Math.max(1, (p.ringStage ?? 1) + delta)) }
+        : p
+    ))
+  }
+
+  function toggleDayNight(playerId) {
+    setPlayers(prev => prev.map(p =>
+      p.id === playerId
+        ? { ...p, dayNightState: p.dayNightState === 'day' ? 'night' : 'day' }
+        : p
+    ))
+  }
+
   function giveMonarch(playerId) {
     setMonarchId(prev => prev === playerId ? null : playerId)
   }
@@ -192,6 +234,10 @@ export default function GameBoard({ config, onEndGame }) {
     onGiveMonarch: giveMonarch,
     onGiveInitiative: giveInitiative,
     onToggleWidget: toggleWidget,
+    onToggleSelectedToken: toggleSelectedToken,
+    onToggleEmblem: toggleEmblem,
+    onAdjustRingStage: adjustRingStage,
+    onToggleDayNight: toggleDayNight,
   })
 
   // ── Focus mode ─────────────────────────────────────────────────────────────

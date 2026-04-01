@@ -41,46 +41,80 @@
   background: rgba(124, 106, 247, 0.1);
 }
 
+/* Rolling state animation */
+.die-btn.rolling {
+  border-color: var(--accent);
+  background: rgba(124, 106, 247, 0.15);
+  animation: die-shake 0.1s infinite alternate;
+}
+
+@keyframes die-shake {
+  from { transform: rotate(-4deg) scale(1.05); }
+  to   { transform: rotate(4deg) scale(1.05); }
+}
+
+.die-anim-num {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--accent-hover);
+}
+
 .die-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* Coin flip */
+.coin-wrap {
+  display: flex;
+  align-items: center;
+}
+
 .coin-btn {
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--border);
   background: var(--surface-2);
   color: var(--text);
-  font-size: 14px;
-  font-weight: 600;
-  min-height: 44px;
-  white-space: nowrap;
-  transition: all 0.2s;
+  font-size: 13px;
+  font-weight: 700;
+  width: 60px;
+  height: 60px;
+  overflow: hidden;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
 }
 
 .coin-btn:hover:not(:disabled) {
   border-color: var(--warning);
   color: var(--warning);
-  background: rgba(224, 154, 58, 0.1);
 }
 
-.coin-btn.flipping {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.coin-btn.heads {
-  border-color: rgba(76, 175, 130, 0.5);
+.coin-wrap.result .coin-btn {
+  border-color: var(--success);
   background: rgba(76, 175, 130, 0.12);
   color: var(--success);
 }
 
-.coin-btn.tails {
-  border-color: rgba(224, 82, 82, 0.5);
-  background: rgba(224, 82, 82, 0.1);
-  color: var(--danger);
+.coin-btn:disabled { cursor: not-allowed; }
+
+.coin-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.coin-btn:disabled { cursor: not-allowed; }
+.coin-spin {
+  animation: coin-flip 0.65s ease-in-out;
+}
+
+@keyframes coin-flip {
+  0%   { transform: scaleY(1); }
+  15%  { transform: scaleY(0); }
+  30%  { transform: scaleY(1); }
+  45%  { transform: scaleY(0); }
+  60%  { transform: scaleY(1); }
+  75%  { transform: scaleY(0); }
+  100% { transform: scaleY(1); }
+}
 
 /* Results */
 .dice-results {

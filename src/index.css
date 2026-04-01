@@ -21,6 +21,23 @@
   -webkit-font-smoothing: antialiased;
 }
 
+[data-theme="light"] {
+  --bg: #f0f2f8;
+  --surface: #ffffff;
+  --surface-2: #e8eaf2;
+  --border: #cdd0e0;
+  --text: #383a4a;
+  --text-muted: #8890aa;
+  --text-h: #111220;
+  --accent: #6352e8;
+  --accent-hover: #7c6af7;
+  --danger: #d94040;
+  --danger-hover: #e05252;
+  --success: #3d9e70;
+  --warning: #c47a10;
+  color-scheme: light;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }

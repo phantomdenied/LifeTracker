@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react'
-import { PLANES, PLANES_ONLY, PHENOMENA, SET_LABELS } from '../data/planes.js'
+import { useState, useEffect, useRef } from 'react'
+import { PLANES_ONLY, PHENOMENA, SET_LABELS } from '../data/planes.js'
 import './Planechase.css'
 
-// Planar die faces: blank(×3), chaos(×1), planeswalk(×1), blank(×1)
+const ALL_CARDS = [...PLANES_ONLY, ...PHENOMENA]
 const DIE_FACES = ['blank', 'blank', 'blank', 'planeswalk', 'chaos', 'blank']
 
 function shuffle(arr) {
@@ -14,25 +14,63 @@ function shuffle(arr) {
   return a
 }
 
+// Simple in-memory cache so we don't re-fetch same card
+const imgCache = {}
+
+function usePlaneImage(planeName) {
+  const [url, setUrl] = useState(imgCache[planeName] ?? null)
+  const [loading, setLoading] = useState(!imgCache[planeName] && !!planeName)
+
+  useEffect(() => {
+    if (!planeName) return
+    if (imgCache[planeName]) { setUrl(imgCache[planeName]); setLoading(false); return }
+    setLoading(true)
+    setUrl(null)
+    let cancelled = false
+    fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(planeName)}`)
+      .then(r => {
+        if (r.ok) return r.json()
+        throw new Error('not found')
+      })
+      .then(card => {
+        const img =
+          card.image_uris?.large ??
+          card.image_uris?.normal ??
+          card.card_faces?.[0]?.image_uris?.large ??
+          null
+        if (!cancelled) {
+          if (img) imgCache[planeName] = img
+          setUrl(img)
+        }
+      })
+      .catch(() => { if (!cancelled) setUrl(null) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [planeName])
+
+  return { url, loading }
+}
+
 export default function Planechase() {
-  const [deck, setDeck] = useState(() => shuffle(PLANES))
+  const [deck, setDeck] = useState(() => shuffle(ALL_CARDS))
   const [deckIndex, setDeckIndex] = useState(0)
   const [history, setHistory] = useState([])
   const [dieResult, setDieResult] = useState(null)
   const [rolling, setRolling] = useState(false)
   const [chaosTriggers, setChaosTriggers] = useState(0)
-  const [counters, setCounters] = useState({}) // planeId → count
+  const [counters, setCounters] = useState({})
   const [filterSet, setFilterSet] = useState('all')
   const [showDeckConfig, setShowDeckConfig] = useState(false)
-  const [customPool, setCustomPool] = useState(null) // null = use all
   const [includePhenomena, setIncludePhenomena] = useState(true)
+  const [showText, setShowText] = useState(false)
 
   const currentPlane = deck[deckIndex] ?? null
   const isCurrentPhenomenon = currentPlane?.type === 'phenomenon'
   const currentCounters = counters[currentPlane?.id] ?? 0
+  const { url: cardImg, loading: imgLoading } = usePlaneImage(currentPlane?.name)
 
   function buildDeck(pool) {
-    const d = shuffle(pool ?? PLANES)
+    const d = shuffle(pool ?? ALL_CARDS)
     setDeck(d)
     setDeckIndex(0)
     setHistory([])
@@ -47,11 +85,8 @@ export default function Planechase() {
     setTimeout(() => {
       const face = DIE_FACES[Math.floor(Math.random() * DIE_FACES.length)]
       setDieResult(face)
-      if (face === 'planeswalk') {
-        planeswalk()
-      } else if (face === 'chaos') {
-        setChaosTriggers(n => n + 1)
-      }
+      if (face === 'planeswalk') planeswalk()
+      else if (face === 'chaos') setChaosTriggers(n => n + 1)
       setRolling(false)
     }, 350)
   }
@@ -84,64 +119,84 @@ export default function Planechase() {
   function applyConfig() {
     let pool = PLANES_ONLY
     if (filterSet !== 'all') pool = pool.filter(p => p.set === filterSet)
-    if (includePhenomena) pool = [...pool, ...PHENOMENA.filter(p => filterSet === 'all' || p.set === filterSet)]
-    buildDeck(pool.length > 0 ? pool : PLANES)
+    if (includePhenomena) {
+      const phen = PHENOMENA.filter(p => filterSet === 'all' || p.set === filterSet)
+      pool = [...pool, ...phen]
+    }
+    buildDeck(pool.length > 0 ? pool : ALL_CARDS)
     setShowDeckConfig(false)
   }
 
   const SET_KEYS = ['all', 'PC1', 'PC2', 'CLB']
+  const needsCounter = ['aretopolis', 'kilnspire', 'naar-isle', 'mechanus'].includes(currentPlane?.id)
 
   return (
     <div className="planechase">
-      {/* Current plane */}
-      {currentPlane ? (
+      {/* Card image + info */}
+      {currentPlane && (
         <div className={`plane-card ${isCurrentPhenomenon ? 'phenomenon' : ''}`}>
-          <div className="plane-header">
-            <div className="plane-title-block">
-              <span className={`plane-type-badge ${isCurrentPhenomenon ? 'phen' : ''}`}>
-                {isCurrentPhenomenon ? 'Phenomenon' : 'Plane'}
-              </span>
-              {currentPlane.world && (
-                <span className="plane-world">{currentPlane.world}</span>
+          {/* Card image */}
+          <div className="plane-img-wrap">
+            {imgLoading && <div className="plane-img-skeleton" />}
+            {cardImg && (
+              <img
+                className="plane-img"
+                src={cardImg}
+                alt={currentPlane.name}
+                loading="lazy"
+              />
+            )}
+            {!imgLoading && !cardImg && (
+              <div className="plane-img-fallback">
+                <span className="plane-img-fallback-name">{currentPlane.name}</span>
+              </div>
+            )}
+
+            {/* Overlay badges */}
+            <div className="plane-img-overlay">
+              <div className="plane-overlay-top">
+                <span className={`plane-type-badge ${isCurrentPhenomenon ? 'phen' : ''}`}>
+                  {isCurrentPhenomenon ? 'Phenomenon' : 'Plane'}
+                </span>
+                {currentPlane.world && (
+                  <span className="plane-world-badge">{currentPlane.world}</span>
+                )}
+              </div>
+              {chaosTriggers > 0 && (
+                <div className="chaos-overlay">✦ Chaos{chaosTriggers > 1 ? ` ×${chaosTriggers}` : ''}!</div>
+              )}
+              <button className="show-text-btn" onClick={() => setShowText(v => !v)}>
+                {showText ? 'Hide text' : 'Show text'}
+              </button>
+            </div>
+          </div>
+
+          {/* Card text (collapsible) */}
+          {showText && (
+            <div className="plane-text-block">
+              <p className="plane-name">{currentPlane.name}</p>
+              <div className="plane-text static-text">{currentPlane.static}</div>
+              {currentPlane.chaos && (
+                <div className="plane-text chaos-text">
+                  <span className="chaos-icon">✦ Chaos:</span> {currentPlane.chaos}
+                </div>
+              )}
+              {isCurrentPhenomenon && (
+                <div className="phen-note">Encounter — planeswalk immediately after resolving.</div>
               )}
             </div>
-            <span className="plane-set">{SET_LABELS[currentPlane.set] ?? currentPlane.set}</span>
-          </div>
-
-          <h2 className="plane-name">{currentPlane.name}</h2>
-
-          <div className="plane-text static-text">
-            {currentPlane.static}
-          </div>
-
-          {currentPlane.chaos && (
-            <div className="plane-text chaos-text">
-              <span className="chaos-icon">✦ Chaos:</span> {currentPlane.chaos}
-            </div>
           )}
 
-          {isCurrentPhenomenon && (
-            <div className="phen-note">Encounter effect applied — planeswalk immediately.</div>
-          )}
-
-          {/* Plane counters (for planes that use them like Aretopolis, Kilnspire, Naar Isle, Mechanus) */}
-          {['aretopolis', 'kilnspire', 'naar-isle', 'mechanus'].includes(currentPlane.id) && (
+          {/* Counter for certain planes */}
+          {needsCounter && (
             <div className="plane-counters">
-              <span className="counter-label" style={{ color: 'var(--accent-hover)' }}>Counters</span>
+              <span className="counter-key-label">Counters</span>
               <button className="counter-adj" onClick={() => adjustCounter(-1)} disabled={currentCounters <= 0}>−</button>
-              <span className="extra-val">{currentCounters}</span>
+              <span className="counter-val">{currentCounters}</span>
               <button className="counter-adj" onClick={() => adjustCounter(1)}>+</button>
             </div>
           )}
-
-          {chaosTriggers > 0 && (
-            <div className="chaos-triggered">
-              ✦ Chaos triggered {chaosTriggers > 1 ? `×${chaosTriggers}` : ''}!
-            </div>
-          )}
         </div>
-      ) : (
-        <div className="plane-card empty">No planes in deck.</div>
       )}
 
       {/* Die result */}
@@ -155,9 +210,7 @@ export default function Planechase() {
 
       {/* Controls */}
       <div className="plane-controls">
-        <button className="plane-btn secondary" onClick={planewalkBack} disabled={history.length === 0}>
-          ← Back
-        </button>
+        <button className="plane-btn secondary" onClick={planewalkBack} disabled={history.length === 0}>◀ Back</button>
         <button
           className={`plane-btn die-btn-big ${rolling ? 'rolling' : ''}`}
           onClick={rollDie}
@@ -165,21 +218,15 @@ export default function Planechase() {
         >
           {rolling ? '…' : 'Roll Planar Die'}
         </button>
-        <button className="plane-btn primary" onClick={() => planeswalk()}>
-          Planeswalk →
-        </button>
+        <button className="plane-btn primary" onClick={() => planeswalk()}>Planeswalk ▶</button>
       </div>
 
       <div className="plane-controls secondary-row">
         <button className="plane-btn small" onClick={() => setShowDeckConfig(v => !v)}>
           ⚙ Deck ({deck.length})
         </button>
-        <span className="plane-progress">
-          Plane {deckIndex + 1} / {deck.length}
-        </span>
-        <button className="plane-btn small danger" onClick={() => buildDeck()}>
-          Reshuffle
-        </button>
+        <span className="plane-progress">Plane {deckIndex + 1} / {deck.length}</span>
+        <button className="plane-btn small danger" onClick={() => buildDeck()}>Reshuffle</button>
       </div>
 
       {/* Deck config */}
@@ -199,19 +246,11 @@ export default function Planechase() {
               ))}
             </div>
           </div>
-          <div className="deck-config-section">
-            <label className="config-toggle">
-              <input
-                type="checkbox"
-                checked={includePhenomena}
-                onChange={e => setIncludePhenomena(e.target.checked)}
-              />
-              Include Phenomena
-            </label>
-          </div>
-          <button className="plane-btn primary" onClick={applyConfig}>
-            Apply & Reshuffle
-          </button>
+          <label className="config-toggle">
+            <input type="checkbox" checked={includePhenomena} onChange={e => setIncludePhenomena(e.target.checked)} />
+            Include Phenomena
+          </label>
+          <button className="plane-btn primary" onClick={applyConfig}>Apply & Reshuffle</button>
         </div>
       )}
 
@@ -221,9 +260,7 @@ export default function Planechase() {
           <span className="history-label">Previously visited</span>
           <div className="history-chips">
             {history.slice(0, 6).map((p, i) => (
-              <span key={i} className={`history-chip ${p.type === 'phenomenon' ? 'phen' : ''}`}>
-                {p.name}
-              </span>
+              <span key={i} className={`history-chip ${p.type === 'phenomenon' ? 'phen' : ''}`}>{p.name}</span>
             ))}
           </div>
         </div>

@@ -1,27 +1,48 @@
 import { useState, useRef } from 'react'
+import { EMBLEMS, STATUS_EMBLEMS, PW_EMBLEMS } from '../data/emblems'
 import './PlayerCard.css'
 
 const QUICK_AMOUNTS = [1, 5, 10]
 
 const EXTRA_COUNTERS = [
-  { key: 'experience', label: 'Exp', color: '#e09a3a' },
-  { key: 'energy',     label: 'Nrg', color: '#4a9fd4' },
+  { key: 'experience', label: 'Exp',   color: '#e09a3a' },
+  { key: 'energy',     label: 'Nrg',   color: '#4a9fd4' },
   { key: 'plusone',    label: '+1/+1', color: '#4caf82' },
 ]
 
-const TOKENS = [
-  { key: 'treasure',  label: '💰 Treasure' },
-  { key: 'clue',      label: '🔍 Clue' },
-  { key: 'food',      label: '🍎 Food' },
-  { key: 'blood',     label: '🩸 Blood' },
-  { key: 'map',       label: '🗺 Map' },
-  { key: 'soldier',   label: '⚔ Soldier' },
-  { key: 'zombie',    label: '💀 Zombie' },
-  { key: 'goblin',    label: '👺 Goblin' },
-  { key: 'saproling', label: '🍄 Saproling' },
-  { key: 'wolf',      label: '🐺 Wolf' },
-  { key: 'thopter',   label: '✈ Thopter' },
-  { key: 'spirit',    label: '👻 Spirit' },
+const ALL_TOKENS = [
+  { key: 'treasure',    label: '💰 Treasure' },
+  { key: 'clue',        label: '🔍 Clue' },
+  { key: 'food',        label: '🍎 Food' },
+  { key: 'blood',       label: '🩸 Blood' },
+  { key: 'gold',        label: '🪙 Gold' },
+  { key: 'shard',       label: '🔷 Shard' },
+  { key: 'map',         label: '🗺 Map' },
+  { key: 'gnome',       label: '🧙 Gnome' },
+  { key: 'servo',       label: '⚙ Servo' },
+  { key: 'thopter',     label: '✈ Thopter' },
+  { key: 'soldier',     label: '⚔ Soldier' },
+  { key: 'zombie',      label: '💀 Zombie' },
+  { key: 'goblin',      label: '👺 Goblin' },
+  { key: 'wolf',        label: '🐺 Wolf' },
+  { key: 'saproling',   label: '🍄 Saproling' },
+  { key: 'spirit',      label: '👻 Spirit' },
+  { key: 'human',       label: '🧑 Human' },
+  { key: 'knight',      label: '🏇 Knight' },
+  { key: 'rat',         label: '🐀 Rat' },
+  { key: 'snake',       label: '🐍 Snake' },
+  { key: 'spider',      label: '🕷 Spider' },
+  { key: 'insect',      label: '🦗 Insect' },
+  { key: 'angel',       label: '😇 Angel' },
+  { key: 'dragon',      label: '🐉 Dragon' },
+  { key: 'bird',        label: '🐦 Bird' },
+  { key: 'cat',         label: '🐱 Cat' },
+  { key: 'elemental',   label: '🔥 Elemental' },
+  { key: 'spawn',       label: '👾 Eldrazi Spawn' },
+  { key: 'scion',       label: '🌀 Eldrazi Scion' },
+  { key: 'copy',        label: '©️ Copy' },
+  { key: 'worm',        label: '🐛 Worm' },
+  { key: 'wurm',        label: '🐍 Wurm' },
 ]
 
 // Widgets that persist on the card once added
@@ -29,9 +50,9 @@ const PERSISTENT_WIDGETS = [
   { key: 'poison',   label: '☠ Poison' },
   { key: 'counters', label: '◈ Counters' },
   { key: 'tokens',   label: '🎭 Tokens' },
+  { key: 'emblems',  label: '★ Emblems & Status' },
   { key: 'cmddmg',   label: '⚔ Cmd Damage', commanderOnly: true },
   { key: 'cmdtax',   label: '📜 Cmd Tax',    commanderOnly: true },
-  { key: 'monarch',  label: '♛ Monarch' },
 ]
 
 export default function PlayerCard({
@@ -49,23 +70,33 @@ export default function PlayerCard({
   onGiveMonarch,
   onGiveInitiative,
   onToggleWidget,
+  onToggleSelectedToken,
+  onToggleEmblem,
+  onAdjustRingStage,
+  onToggleDayNight,
   focusMode,
 }) {
-  const [fabOpen, setFabOpen]       = useState(false)
-  const [customOpen, setCustomOpen] = useState(false)
-  const [customInput, setCustomInput] = useState('')
+  const [fabOpen, setFabOpen]             = useState(false)
+  const [tokenPickerOpen, setTokenPickerOpen] = useState(false)
+  const [emblemPickerOpen, setEmblemPickerOpen] = useState(false)
+  const [customOpen, setCustomOpen]       = useState(false)
+  const [customInput, setCustomInput]     = useState('')
   const inputRef = useRef(null)
 
-  const opponents   = allPlayers.filter(p => p.id !== player.id)
+  const opponents    = allPlayers.filter(p => p.id !== player.id)
   const isEliminated = player.eliminated
-  const cmdDmgLoss  = isCommander
+  const cmdDmgLoss   = isCommander
     ? opponents.find(op => (player.commanderDamage?.[op.id] ?? 0) >= 21)
     : null
-  const poisonDead  = (player.poison ?? 0) >= 10
-  const isDead      = player.life <= 0 || !!cmdDmgLoss || poisonDead
+  const poisonDead   = (player.poison ?? 0) >= 10
+  const isDead       = player.life <= 0 || !!cmdDmgLoss || poisonDead
   const commanderTax = Math.max(0, ((player.commanderCasts ?? 0) - 1) * 2)
-  const recentLog   = (player.lifeLog ?? []).slice(0, 3)
-  const activeWidgets = player.activeWidgets ?? []
+  const recentLog    = (player.lifeLog ?? []).slice(0, 3)
+  const activeWidgets  = player.activeWidgets ?? []
+  const selectedTokens = player.selectedTokens ?? []
+  const activeEmblems  = player.activeEmblems ?? []
+  const ringStage      = player.ringStage ?? 1
+  const dayNight       = player.dayNightState ?? 'day'
 
   const hasArt  = !!(player.commanderArt || player.commanderArt2)
   const artStyle = {
@@ -74,9 +105,8 @@ export default function PlayerCard({
     ...(player.commanderArt2 ? { '--art-url2': `url(${player.commanderArt2})` } : {}),
   }
 
-  const visibleWidgets = PERSISTENT_WIDGETS.filter(w =>
-    (!w.commanderOnly || isCommander) && activeWidgets.includes(w.key)
-  )
+  // Tokens currently shown on the card (intersection of selected + defined)
+  const visibleTokens = ALL_TOKENS.filter(t => selectedTokens.includes(t.key))
 
   function applyCustom(sign) {
     const val = parseInt(customInput, 10)
@@ -93,9 +123,26 @@ export default function PlayerCard({
     if (e.key === '-') { e.preventDefault(); applyCustom(-1) }
   }
 
-  function toggleWidget(key) {
-    onToggleWidget(player.id, key)
+  function openTokenPicker() {
+    // Add widget if not there yet, then open picker
+    if (!activeWidgets.includes('tokens')) {
+      onToggleWidget(player.id, 'tokens')
+    }
+    setTokenPickerOpen(true)
     setFabOpen(false)
+  }
+
+  function openEmblemPicker() {
+    if (!activeWidgets.includes('emblems')) {
+      onToggleWidget(player.id, 'emblems')
+    }
+    setEmblemPickerOpen(true)
+    setFabOpen(false)
+  }
+
+  // Get emblem data by key
+  function getEmblem(key) {
+    return EMBLEMS.find(e => e.key === key)
   }
 
   return (
@@ -112,7 +159,6 @@ export default function PlayerCard({
         ].filter(Boolean).join(' ')}
         style={artStyle}
       >
-        {/* Partner art */}
         {player.commanderArt2 && <div className="partner-art-bg" />}
 
         {/* Header */}
@@ -164,7 +210,7 @@ export default function PlayerCard({
           )}
         </div>
 
-        {/* Quick adjust buttons */}
+        {/* Quick adjust */}
         <div className="life-controls">
           <div className="control-row">
             {QUICK_AMOUNTS.map(amt => (
@@ -182,7 +228,7 @@ export default function PlayerCard({
           </div>
         </div>
 
-        {/* Custom adjust inline (shown when triggered from FAB) */}
+        {/* Custom adjust inline */}
         {customOpen && (
           <div className="widget-block">
             <div className="widget-header">
@@ -207,7 +253,7 @@ export default function PlayerCard({
           </div>
         )}
 
-        {/* ── Inline persistent widgets ── */}
+        {/* ── Inline widgets ── */}
 
         {/* Poison */}
         {activeWidgets.includes('poison') && (
@@ -255,28 +301,36 @@ export default function PlayerCard({
           </div>
         )}
 
-        {/* Tokens */}
+        {/* Token Tray */}
         {activeWidgets.includes('tokens') && (
           <div className="widget-block">
             <div className="widget-header">
               <span className="widget-label">Token Tray</span>
-              <button className="widget-remove" onClick={() => onToggleWidget(player.id, 'tokens')}>✕</button>
+              <div className="widget-header-actions">
+                <button className="widget-action-btn" onClick={() => setTokenPickerOpen(true)}>+ Add</button>
+                <button className="widget-remove" onClick={() => onToggleWidget(player.id, 'tokens')}>✕</button>
+              </div>
             </div>
-            <div className="tokens-grid">
-              {TOKENS.map(({ key, label }) => {
-                const count = player.tokens?.[key] ?? 0
-                return (
-                  <div key={key} className="token-item">
-                    <span className="token-label">{label}</span>
-                    <div className="token-controls">
-                      <button className="counter-adj" onClick={() => onAdjustCounter(player.id, `token_${key}`, -1)} disabled={count <= 0}>−</button>
-                      <span className="extra-val">{count}</span>
-                      <button className="counter-adj" onClick={() => onAdjustCounter(player.id, `token_${key}`, 1)}>+</button>
+            {visibleTokens.length === 0 && (
+              <p className="widget-empty">Tap "+ Add" to choose token types.</p>
+            )}
+            {visibleTokens.length > 0 && (
+              <div className="tokens-grid">
+                {visibleTokens.map(({ key, label }) => {
+                  const count = player.tokens?.[key] ?? 0
+                  return (
+                    <div key={key} className="token-item">
+                      <span className="token-label">{label}</span>
+                      <div className="token-controls">
+                        <button className="counter-adj" onClick={() => onAdjustCounter(player.id, `token_${key}`, -1)} disabled={count <= 0}>−</button>
+                        <span className="extra-val">{count}</span>
+                        <button className="counter-adj" onClick={() => onAdjustCounter(player.id, `token_${key}`, 1)}>+</button>
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -315,32 +369,59 @@ export default function PlayerCard({
                   </div>
                 )
               })}
-              {opponents.length === 0 && <p className="sheet-empty">No opponents to track.</p>}
+              {opponents.length === 0 && <p className="widget-empty">No opponents to track.</p>}
             </div>
           </div>
         )}
 
-        {/* Monarch & Initiative */}
-        {activeWidgets.includes('monarch') && (
+        {/* Emblems & Status */}
+        {activeWidgets.includes('emblems') && (
           <div className="widget-block">
             <div className="widget-header">
-              <span className="widget-label">Monarch & Initiative</span>
-              <button className="widget-remove" onClick={() => onToggleWidget(player.id, 'monarch')}>✕</button>
+              <span className="widget-label">Emblems & Status</span>
+              <div className="widget-header-actions">
+                <button className="widget-action-btn" onClick={() => setEmblemPickerOpen(true)}>+ Add</button>
+                <button className="widget-remove" onClick={() => onToggleWidget(player.id, 'emblems')}>✕</button>
+              </div>
             </div>
-            <div className="token-row">
-              <button
-                className={`token-btn ${isMonarch ? 'token-active' : ''}`}
-                onClick={() => onGiveMonarch(player.id)}
-              >
-                ♛ {isMonarch ? 'Monarch (you)' : 'Give Monarch'}
-              </button>
-              <button
-                className={`token-btn ${hasInitiative ? 'token-active init' : ''}`}
-                onClick={() => onGiveInitiative(player.id)}
-              >
-                ⚔ {hasInitiative ? 'Initiative (you)' : 'Give Initiative'}
-              </button>
-            </div>
+            {activeEmblems.length === 0 && (
+              <p className="widget-empty">Tap "+ Add" to track emblems and statuses.</p>
+            )}
+            {activeEmblems.map(key => {
+              const e = getEmblem(key)
+              if (!e) return null
+              return (
+                <div key={key} className="emblem-card">
+                  <div className="emblem-card-header">
+                    <span className="emblem-icon">{e.icon ?? '★'}</span>
+                    <span className="emblem-name">{e.label}</span>
+                    <button className="widget-remove" onClick={() => onToggleEmblem(player.id, key)}>✕</button>
+                  </div>
+                  {/* Ring stage controls */}
+                  {e.hasStage && (
+                    <div className="emblem-stage-row">
+                      <button className="counter-adj" onClick={() => onAdjustRingStage(player.id, -1)} disabled={ringStage <= 1}>−</button>
+                      <span className="emblem-stage-label">Stage {ringStage}</span>
+                      <button className="counter-adj" onClick={() => onAdjustRingStage(player.id, 1)} disabled={ringStage >= 4}>+</button>
+                    </div>
+                  )}
+                  {/* Day/Night toggle */}
+                  {e.hasToggle && (
+                    <button className="emblem-toggle-btn" onClick={() => onToggleDayNight(player.id)}>
+                      {dayNight === 'day' ? '☀ Day' : '🌙 Night'} — tap to toggle
+                    </button>
+                  )}
+                  <p className="emblem-text">
+                    {e.hasStage
+                      ? e.stages[ringStage - 1]
+                      : e.hasToggle
+                        ? (dayNight === 'day' ? e.textA : e.textB)
+                        : e.text
+                    }
+                  </p>
+                </div>
+              )
+            })}
           </div>
         )}
 
@@ -355,7 +436,7 @@ export default function PlayerCard({
         </button>
       </div>
 
-      {/* FAB widget picker overlay */}
+      {/* FAB widget picker */}
       {fabOpen && (
         <div className="sheet-overlay" onClick={e => e.target === e.currentTarget && setFabOpen(false)}>
           <div className="sheet">
@@ -365,7 +446,7 @@ export default function PlayerCard({
               <button className="sheet-close" onClick={() => setFabOpen(false)}>✕</button>
             </div>
             <div className="widget-picker">
-              {/* Custom adjust — action, not a persistent widget */}
+              {/* Custom adjust action */}
               <button
                 className="widget-pick-btn action"
                 onClick={() => { setCustomOpen(v => !v); setFabOpen(false) }}
@@ -374,17 +455,113 @@ export default function PlayerCard({
                 <span className="wpick-badge">{customOpen ? 'Hide' : 'Open'}</span>
               </button>
 
-              {/* Persistent widget toggles */}
-              {PERSISTENT_WIDGETS.filter(w => !w.commanderOnly || isCommander).map(w => {
-                const active = activeWidgets.includes(w.key)
+              {/* Tokens — special: opens picker */}
+              <button
+                className={`widget-pick-btn ${activeWidgets.includes('tokens') ? 'active' : ''}`}
+                onClick={openTokenPicker}
+              >
+                <span>🎭 Tokens</span>
+                <span className="wpick-badge">
+                  {activeWidgets.includes('tokens') ? `${selectedTokens.length} types ✓` : 'Add to card'}
+                </span>
+              </button>
+
+              {/* Emblems — special: opens picker */}
+              <button
+                className={`widget-pick-btn ${activeWidgets.includes('emblems') ? 'active' : ''}`}
+                onClick={openEmblemPicker}
+              >
+                <span>★ Emblems & Status</span>
+                <span className="wpick-badge">
+                  {activeWidgets.includes('emblems') ? `${activeEmblems.length} active ✓` : 'Add to card'}
+                </span>
+              </button>
+
+              {/* Simple toggle widgets */}
+              {PERSISTENT_WIDGETS
+                .filter(w => w.key !== 'tokens' && w.key !== 'emblems')
+                .filter(w => !w.commanderOnly || isCommander)
+                .map(w => {
+                  const active = activeWidgets.includes(w.key)
+                  return (
+                    <button
+                      key={w.key}
+                      className={`widget-pick-btn ${active ? 'active' : ''}`}
+                      onClick={() => { onToggleWidget(player.id, w.key); setFabOpen(false) }}
+                    >
+                      <span>{w.label}</span>
+                      <span className="wpick-badge">{active ? 'On card ✓' : 'Add to card'}</span>
+                    </button>
+                  )
+                })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Token type picker */}
+      {tokenPickerOpen && (
+        <div className="sheet-overlay" onClick={e => e.target === e.currentTarget && setTokenPickerOpen(false)}>
+          <div className="sheet">
+            <div className="sheet-handle" />
+            <div className="sheet-header">
+              <span className="sheet-title">Choose Token Types</span>
+              <button className="sheet-close" onClick={() => setTokenPickerOpen(false)}>✕</button>
+            </div>
+            <div className="token-picker-grid">
+              {ALL_TOKENS.map(({ key, label }) => {
+                const selected = selectedTokens.includes(key)
                 return (
                   <button
-                    key={w.key}
-                    className={`widget-pick-btn ${active ? 'active' : ''}`}
-                    onClick={() => toggleWidget(w.key)}
+                    key={key}
+                    className={`token-pick-btn ${selected ? 'active' : ''}`}
+                    onClick={() => onToggleSelectedToken(player.id, key)}
                   >
-                    <span>{w.label}</span>
-                    <span className="wpick-badge">{active ? 'On card ✓' : 'Add to card'}</span>
+                    {label}
+                    {selected && <span className="token-check">✓</span>}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Emblem / Status picker */}
+      {emblemPickerOpen && (
+        <div className="sheet-overlay" onClick={e => e.target === e.currentTarget && setEmblemPickerOpen(false)}>
+          <div className="sheet">
+            <div className="sheet-handle" />
+            <div className="sheet-header">
+              <span className="sheet-title">Emblems & Status</span>
+              <button className="sheet-close" onClick={() => setEmblemPickerOpen(false)}>✕</button>
+            </div>
+            <div className="widget-picker">
+              <div className="picker-section-label">Game Statuses</div>
+              {STATUS_EMBLEMS.map(e => {
+                const active = activeEmblems.includes(e.key)
+                return (
+                  <button
+                    key={e.key}
+                    className={`widget-pick-btn ${active ? 'active' : ''}`}
+                    onClick={() => onToggleEmblem(player.id, e.key)}
+                  >
+                    <span>{e.icon} {e.label}</span>
+                    <span className="wpick-badge">{active ? 'Active ✓' : 'Add'}</span>
+                  </button>
+                )
+              })}
+              <div className="picker-section-label">Planeswalker Emblems</div>
+              {PW_EMBLEMS.map(e => {
+                const active = activeEmblems.includes(e.key)
+                return (
+                  <button
+                    key={e.key}
+                    className={`widget-pick-btn ${active ? 'active' : ''}`}
+                    onClick={() => onToggleEmblem(player.id, e.key)}
+                  >
+                    <span>{e.label}</span>
+                    <span className="wpick-badge">{active ? 'Active ✓' : 'Add'}</span>
                   </button>
                 )
               })}

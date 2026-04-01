@@ -680,6 +680,154 @@
 
 .widget-pick-btn.active .wpick-badge { color: var(--success); }
 
+/* Widget header with actions row */
+.widget-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.widget-action-btn {
+  background: transparent;
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  color: var(--accent-hover);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  touch-action: manipulation;
+  min-height: 26px;
+  transition: background 0.1s;
+}
+
+.widget-action-btn:hover { background: rgba(124, 106, 247, 0.12); }
+
+.widget-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+  padding: 4px 0;
+  font-style: italic;
+}
+
+/* Emblem cards on the player card */
+.emblem-card {
+  background: rgba(124, 106, 247, 0.06);
+  border: 1px solid rgba(124, 106, 247, 0.2);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.emblem-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.emblem-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.emblem-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-hover);
+}
+
+.emblem-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  margin: 0;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 5px;
+}
+
+.emblem-stage-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.emblem-stage-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--warning);
+  min-width: 60px;
+  text-align: center;
+}
+
+.emblem-toggle-btn {
+  background: rgba(224, 154, 58, 0.1);
+  border: 1px solid rgba(224, 154, 58, 0.3);
+  border-radius: 6px;
+  color: var(--warning);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 10px;
+  touch-action: manipulation;
+  transition: background 0.1s;
+  text-align: left;
+}
+
+.emblem-toggle-btn:hover { background: rgba(224, 154, 58, 0.18); }
+
+/* Picker section labels */
+.picker-section-label {
+  padding: 8px 16px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--accent-hover);
+  background: rgba(124, 106, 247, 0.06);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Token type picker grid */
+.token-picker-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-bottom: 8px;
+}
+
+.token-pick-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+  touch-action: manipulation;
+  transition: background 0.1s;
+  min-height: 48px;
+  gap: 4px;
+}
+
+.token-pick-btn:nth-child(odd) { border-right: 1px solid var(--border); }
+.token-pick-btn:hover { background: var(--surface-2); }
+.token-pick-btn.active { color: var(--accent-hover); background: rgba(124, 106, 247, 0.08); }
+
+.token-check {
+  font-size: 12px;
+  color: var(--success);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
 /* FAB */
 .fab {
   position: absolute;
