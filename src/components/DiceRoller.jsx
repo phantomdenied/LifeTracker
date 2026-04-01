@@ -5,7 +5,9 @@ const DICE = [4, 6, 8, 10, 12, 20, 100]
 
 export default function DiceRoller() {
   const [results, setResults] = useState([])
+  const [coin, setCoin] = useState(null) // 'H' | 'T' | null
   const [rolling, setRolling] = useState(false)
+  const [flipping, setFlipping] = useState(false)
 
   function roll(sides) {
     setRolling(true)
@@ -16,20 +18,39 @@ export default function DiceRoller() {
     }, 120)
   }
 
+  function flipCoin() {
+    setFlipping(true)
+    setCoin(null)
+    setTimeout(() => {
+      setCoin(Math.random() < 0.5 ? 'H' : 'T')
+      setFlipping(false)
+    }, 300)
+  }
+
   return (
     <div className="dice-roller">
-      <div className="dice-buttons">
-        {DICE.map(d => (
-          <button
-            key={d}
-            className="die-btn"
-            onClick={() => roll(d)}
-            disabled={rolling}
-            title={`Roll d${d}`}
-          >
-            d{d}
-          </button>
-        ))}
+      <div className="dice-top-row">
+        <div className="dice-buttons">
+          {DICE.map(d => (
+            <button
+              key={d}
+              className="die-btn"
+              onClick={() => roll(d)}
+              disabled={rolling}
+            >
+              d{d}
+            </button>
+          ))}
+        </div>
+
+        <button
+          className={`coin-btn ${flipping ? 'flipping' : ''} ${coin ? (coin === 'H' ? 'heads' : 'tails') : ''}`}
+          onClick={flipCoin}
+          disabled={flipping}
+          title="Flip a coin"
+        >
+          {flipping ? '…' : coin === 'H' ? 'Heads' : coin === 'T' ? 'Tails' : 'Flip'}
+        </button>
       </div>
 
       {results.length > 0 && (

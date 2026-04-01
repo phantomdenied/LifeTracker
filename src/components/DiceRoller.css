@@ -8,20 +8,30 @@
   gap: 10px;
 }
 
+.dice-top-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
 .dice-buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  flex: 1;
 }
 
 .die-btn {
-  padding: 5px 10px;
+  padding: 8px 12px;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
+  min-height: 44px;
+  min-width: 44px;
   transition: all 0.12s;
 }
 
@@ -33,6 +43,46 @@
 
 .die-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Coin flip */
+.coin-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.coin-btn:hover:not(:disabled) {
+  border-color: var(--warning);
+  color: var(--warning);
+  background: rgba(224, 154, 58, 0.1);
+}
+
+.coin-btn.flipping {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.coin-btn.heads {
+  border-color: rgba(76, 175, 130, 0.5);
+  background: rgba(76, 175, 130, 0.12);
+  color: var(--success);
+}
+
+.coin-btn.tails {
+  border-color: rgba(224, 82, 82, 0.5);
+  background: rgba(224, 82, 82, 0.1);
+  color: var(--danger);
+}
+
+.coin-btn:disabled { cursor: not-allowed; }
+
+/* Results */
 .dice-results {
   display: flex;
   flex-wrap: wrap;
@@ -44,27 +94,28 @@
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  min-width: 36px;
-  padding: 4px 8px;
+  min-width: 40px;
+  padding: 5px 8px;
   border-radius: 6px;
   font-weight: 700;
-  font-size: 18px;
   line-height: 1;
-  transition: all 0.15s;
+  min-height: 44px;
+  justify-content: center;
 }
 
 .dice-result sub {
   font-size: 9px;
   font-weight: 400;
   color: var(--text-muted);
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .dice-result.latest {
   background: rgba(124, 106, 247, 0.15);
   color: var(--accent-hover);
   border: 1px solid rgba(124, 106, 247, 0.3);
-  font-size: 22px;
+  font-size: 24px;
+  min-width: 56px;
 }
 
 .dice-result.old {
@@ -72,7 +123,7 @@
   color: var(--text-muted);
   border: 1px solid var(--border);
   font-size: 14px;
-  opacity: 0.6;
+  opacity: 0.65;
 }
 
 .dice-result.nat-max.latest {
@@ -91,10 +142,12 @@
   background: transparent;
   border: none;
   color: var(--text-muted);
-  font-size: 12px;
-  padding: 4px;
+  font-size: 14px;
+  padding: 8px;
   margin-left: auto;
   cursor: pointer;
+  min-height: 44px;
+  min-width: 44px;
   transition: color 0.15s;
 }
 

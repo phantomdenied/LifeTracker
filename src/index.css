@@ -21,12 +21,36 @@
   -webkit-font-smoothing: antialiased;
 }
 
-* {
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
+  /* Remove 300ms tap delay on mobile */
+  touch-action: pan-x pan-y;
+}
+
+/* Remove tap highlight on all interactive elements */
+button, input, select, textarea, a {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button {
+  font-family: inherit;
+  font-size: 16px;
+  cursor: pointer;
+  /* Prevent text selection on double-tap */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: 16px;
+  /* Prevent iOS zoom on focus (requires font-size >= 16px) */
+  font-size: max(16px, 1em);
 }
 
 h1, h2, h3 {
@@ -34,13 +58,13 @@ h1, h2, h3 {
   margin: 0 0 8px;
 }
 
-button {
-  font-family: inherit;
-  font-size: 16px;
-  cursor: pointer;
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
-
-input {
-  font-family: inherit;
-  font-size: 16px;
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
 }

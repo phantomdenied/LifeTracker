@@ -10,7 +10,7 @@
 .history {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   max-width: 640px;
 }
 
@@ -18,27 +18,172 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
 
-.history-toolbar h2 {
-  margin: 0;
-  font-size: 18px;
+.history-tabs {
+  display: flex;
+  gap: 6px;
 }
 
-.btn-danger-sm {
-  padding: 5px 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(224, 82, 82, 0.3);
-  background: rgba(224, 82, 82, 0.1);
-  color: var(--danger);
-  font-size: 13px;
+.history-tabs button {
+  padding: 0 18px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  touch-action: manipulation;
   transition: all 0.15s;
 }
 
-.btn-danger-sm:hover {
-  background: rgba(224, 82, 82, 0.2);
+.history-tabs button.active {
+  background: rgba(124, 106, 247, 0.12);
+  border-color: var(--accent);
+  color: var(--accent-hover);
+  font-weight: 600;
 }
 
+.btn-danger-sm {
+  padding: 0 14px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid rgba(224, 82, 82, 0.3);
+  background: rgba(224, 82, 82, 0.08);
+  color: var(--danger);
+  font-size: 13px;
+  touch-action: manipulation;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-danger-sm:hover { background: rgba(224, 82, 82, 0.18); }
+
+/* Stats */
+.stats-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stat-cards {
+  display: flex;
+  gap: 10px;
+}
+
+.stat-card {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-h);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.stats-section h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-height: 44px;
+}
+
+.lb-rank {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  width: 22px;
+  flex-shrink: 0;
+}
+
+.lb-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lb-wins {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--success);
+  width: 30px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.lb-games {
+  font-size: 12px;
+  color: var(--text-muted);
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.lb-bar-wrap {
+  width: 60px;
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.lb-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.lb-pct {
+  font-size: 12px;
+  color: var(--text-muted);
+  width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* History list */
 .history-list {
   display: flex;
   flex-direction: column;
@@ -49,7 +194,7 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 14px 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -58,7 +203,8 @@
 .history-meta {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .history-format {
@@ -68,18 +214,26 @@
   border-radius: 4px;
   background: rgba(124, 106, 247, 0.15);
   color: var(--accent-hover);
+  flex-shrink: 0;
+}
+
+.history-winner {
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 .history-date {
   font-size: 12px;
   color: var(--text-muted);
   margin-left: auto;
+  white-space: nowrap;
 }
 
 .history-players {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .history-player {
@@ -87,11 +241,10 @@
   align-items: center;
   gap: 8px;
   font-size: 14px;
+  min-height: 32px;
 }
 
-.history-player.elim {
-  opacity: 0.5;
-}
+.history-player.elim { opacity: 0.5; }
 
 .hp-dot {
   width: 8px;
@@ -108,13 +261,15 @@
 .hp-life {
   color: var(--text-muted);
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .hp-badge {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   padding: 2px 6px;
   border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .win-badge {
@@ -127,7 +282,87 @@
   color: var(--danger);
 }
 
-/* Reuse modal styles from GameBoard */
+/* Notes */
+.notes-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.notes-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  white-space: pre-wrap;
+  font-style: italic;
+}
+
+.btn-notes {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 6px 10px;
+  min-height: 36px;
+  touch-action: manipulation;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-notes:hover {
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}
+
+.notes-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.notes-textarea {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text-h);
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  min-height: 72px;
+}
+
+.notes-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.btn-sm {
+  padding: 0 14px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 13px;
+  touch-action: manipulation;
+  transition: all 0.15s;
+}
+
+.btn-sm.primary {
+  border-color: var(--accent);
+  background: rgba(124, 106, 247, 0.12);
+  color: var(--accent-hover);
+  font-weight: 600;
+}
+
+/* Modal (reused) */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -136,21 +371,19 @@
   align-items: center;
   justify-content: center;
   z-index: 100;
+  padding: 16px;
 }
 
 .modal {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 28px 32px;
+  padding: 24px 20px;
   max-width: 360px;
-  width: 90%;
+  width: 100%;
 }
 
-.modal h3 {
-  font-size: 18px;
-  margin-bottom: 8px;
-}
+.modal h3 { font-size: 18px; margin-bottom: 8px; }
 
 .modal p {
   color: var(--text-muted);
@@ -160,34 +393,29 @@
 
 .modal-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-end;
 }
 
 .btn-secondary {
-  padding: 7px 16px;
-  border-radius: 6px;
+  padding: 0 14px;
+  height: 44px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
   font-size: 14px;
-  transition: all 0.15s;
-}
-
-.btn-secondary:hover {
-  background: var(--surface-2);
+  touch-action: manipulation;
 }
 
 .btn-danger {
-  padding: 7px 16px;
-  border-radius: 6px;
+  padding: 0 14px;
+  height: 44px;
+  border-radius: 8px;
   border: 1px solid rgba(224, 82, 82, 0.3);
   background: rgba(224, 82, 82, 0.1);
   color: var(--danger);
   font-size: 14px;
-  transition: all 0.15s;
-}
-
-.btn-danger:hover {
-  background: rgba(224, 82, 82, 0.2);
+  font-weight: 600;
+  touch-action: manipulation;
 }

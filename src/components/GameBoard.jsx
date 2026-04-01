@@ -1,6 +1,9 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import PlayerCard from './PlayerCard'
 import DiceRoller from './DiceRoller'
+import DungeonTracker from './DungeonTracker'
+import CardLookup from './CardLookup'
+import { useWakeLock } from '../hooks/useWakeLock'
 import './GameBoard.css'
 
 function initPlayers(config) {
@@ -11,33 +14,63 @@ function initPlayers(config) {
       ? Object.fromEntries(config.players.filter(op => op.id !== p.id).map(op => [op.id, 0]))
       : null,
     poison: 0,
+    commanderCasts: 0,
     counters: { experience: 0, energy: 0, plusone: 0 },
+    lifeLog: [],
     eliminated: false,
   }))
 }
 
+const TOOLS = ['dice', 'cards', 'dungeons']
+const TOOL_LABELS = { dice: 'Dice & Coins', cards: 'Card Lookup', dungeons: 'Dungeons' }
+
 export default function GameBoard({ config, onEndGame }) {
   const [players, setPlayers] = useState(() => initPlayers(config))
+  const [undoStack, setUndoStack] = useState([])
   const [turnIndex, setTurnIndex] = useState(0)
   const [turnNumber, setTurnNumber] = useState(1)
   const [storm, setStorm] = useState(0)
-  const [showEndConfirm, setShowEndConfirm] = useState(false)
-  const [showTools, setShowTools] = useState(false)
-  const isCommander = config.format.id === 'commander'
+  const [monarchId, setMonarchId] = useState(null)
+  const [initiativeId, setInitiativeId] = useState(null)
+  const [showEndModal, setShowEndModal] = useState(false)
+  const [selectedWinner, setSelectedWinner] = useState(null)
+  const [notes, setNotes] = useState('')
+  const [activeTool, setActiveTool] = useState(null)
+  const { active: wakeLockActive, toggle: toggleWakeLock, supported: wakeLockSupported } = useWakeLock()
 
+  const isCommander = config.format.id === 'commander'
   const activePlayers = players.filter(p => !p.eliminated)
   const activePlayer = players[turnIndex] ?? activePlayers[0]
 
+  // Auto-detect winner
+  useEffect(() => {
+    if (activePlayers.length === 1 && !selectedWinner) {
+      setSelectedWinner(activePlayers[0].id)
+    }
+  }, [activePlayers.length])
+
+  function snapshot() {
+    return JSON.parse(JSON.stringify(players))
+  }
+
+  function pushUndo() {
+    setUndoStack(prev => [snapshot(), ...prev.slice(0, 9)])
+  }
+
+  function undo() {
+    if (undoStack.length === 0) return
+    setPlayers(undoStack[0])
+    setUndoStack(prev => prev.slice(1))
+  }
+
   function nextTurn() {
-    // Find next non-eliminated player
     let next = (turnIndex + 1) % players.length
     let loops = 0
     while (players[next]?.eliminated && loops < players.length) {
       next = (next + 1) % players.length
       loops++
     }
-    if (next <= turnIndex && next !== 0) setTurnNumber(n => n + 1)
-    if (next === 0 || next < turnIndex) setTurnNumber(n => n + 1)
+    if (next <= turnIndex) setTurnNumber(n => n + 1)
     setTurnIndex(next)
     setStorm(0)
   }
@@ -54,38 +87,47 @@ export default function GameBoard({ config, onEndGame }) {
   }
 
   const adjustLife = useCallback((playerId, delta) => {
+    pushUndo()
     setPlayers(prev => prev.map(p =>
-      p.id === playerId ? { ...p, life: p.life + delta } : p
+      p.id === playerId
+        ? { ...p, life: p.life + delta, lifeLog: [{ delta, ts: Date.now() }, ...(p.lifeLog ?? []).slice(0, 9)] }
+        : p
     ))
-  }, [])
+  }, [undoStack])
 
   const adjustPoison = useCallback((playerId, delta) => {
+    pushUndo()
     setPlayers(prev => prev.map(p =>
       p.id === playerId
         ? { ...p, poison: Math.max(0, Math.min(10, (p.poison ?? 0) + delta)) }
         : p
     ))
-  }, [])
+  }, [undoStack])
 
   const adjustCounter = useCallback((playerId, key, delta) => {
-    setPlayers(prev => prev.map(p =>
-      p.id === playerId
-        ? { ...p, counters: { ...p.counters, [key]: Math.max(0, (p.counters?.[key] ?? 0) + delta) } }
-        : p
-    ))
-  }, [])
+    pushUndo()
+    setPlayers(prev => prev.map(p => {
+      if (p.id !== playerId) return p
+      if (key === 'commanderCasts') {
+        return { ...p, commanderCasts: Math.max(0, (p.commanderCasts ?? 0) + delta) }
+      }
+      return { ...p, counters: { ...p.counters, [key]: Math.max(0, (p.counters?.[key] ?? 0) + delta) } }
+    }))
+  }, [undoStack])
 
   const adjustCommanderDamage = useCallback((playerId, fromId, delta) => {
+    pushUndo()
     setPlayers(prev => prev.map(p => {
       if (p.id !== playerId) return p
       const newDmg = Math.max(0, (p.commanderDamage[fromId] ?? 0) + delta)
       return {
         ...p,
         life: p.life - delta,
+        lifeLog: [{ delta: -delta, ts: Date.now() }, ...(p.lifeLog ?? []).slice(0, 9)],
         commanderDamage: { ...p.commanderDamage, [fromId]: newDmg },
       }
     }))
-  }, [])
+  }, [undoStack])
 
   const toggleEliminated = useCallback((playerId) => {
     setPlayers(prev => prev.map(p =>
@@ -93,52 +135,90 @@ export default function GameBoard({ config, onEndGame }) {
     ))
   }, [])
 
+  function giveMonarch(playerId) {
+    setMonarchId(prev => prev === playerId ? null : playerId)
+  }
+
+  function giveInitiative(playerId) {
+    setInitiativeId(prev => prev === playerId ? null : playerId)
+  }
+
+  function resetGame() {
+    setPlayers(initPlayers(config))
+    setUndoStack([])
+    setTurnIndex(0)
+    setTurnNumber(1)
+    setStorm(0)
+    setMonarchId(null)
+    setInitiativeId(null)
+    setSelectedWinner(null)
+  }
+
+  function handleEndGame() {
+    onEndGame(players, selectedWinner, notes)
+  }
+
   return (
     <div className="board">
-      {/* Turn tracker bar */}
+      {/* Turn bar */}
       <div className="turn-bar">
-        <button className="turn-nav" onClick={prevTurn} title="Previous turn">◀</button>
+        <button className="turn-nav" onClick={prevTurn} aria-label="Previous turn">◀</button>
         <div className="turn-info">
           <span className="turn-label">Turn {turnNumber}</span>
           <span className="turn-player" style={{ color: activePlayer?.color }}>
-            {activePlayer?.name}
+            {activePlayer?.name ?? '—'}
           </span>
         </div>
-        <button className="turn-nav next-turn" onClick={nextTurn} title="Next turn">
+        <button className="turn-nav next-turn" onClick={nextTurn}>
           Next Turn ▶
         </button>
       </div>
 
       {/* Toolbar */}
       <div className="board-toolbar">
-        <div className="board-info">
-          <span className="format-badge">{config.format.label}</span>
-          <span className="life-badge">{config.format.startingLife} life</span>
-        </div>
         <div className="storm-wrap">
           <span className="storm-label">Storm</span>
-          <button className="storm-adj" onClick={() => setStorm(s => Math.max(0, s - 1))} disabled={storm === 0}>-</button>
+          <button className="storm-adj" onClick={() => setStorm(s => Math.max(0, s - 1))} disabled={storm === 0}>−</button>
           <span className="storm-count">{storm}</span>
           <button className="storm-adj" onClick={() => setStorm(s => s + 1)}>+</button>
         </div>
+
         <div className="board-actions">
-          <button className="btn-secondary" onClick={() => setShowTools(v => !v)}>
-            Tools {showTools ? '▲' : '▼'}
+          {wakeLockSupported && (
+            <button
+              className={`btn-icon ${wakeLockActive ? 'active' : ''}`}
+              onClick={toggleWakeLock}
+              title={wakeLockActive ? 'Screen lock: OFF' : 'Screen lock: ON'}
+            >
+              {wakeLockActive ? '🔆' : '🔅'}
+            </button>
+          )}
+          <button className="btn-secondary" onClick={undo} disabled={undoStack.length === 0} title="Undo">
+            ↩ Undo
           </button>
-          <button className="btn-secondary" onClick={() => { setPlayers(initPlayers(config)); setTurnIndex(0); setTurnNumber(1); setStorm(0) }}>
-            Reset
-          </button>
-          <button className="btn-danger" onClick={() => setShowEndConfirm(true)}>End Game</button>
+          <button className="btn-secondary" onClick={resetGame}>Reset</button>
+          <button className="btn-danger" onClick={() => setShowEndModal(true)}>End Game</button>
         </div>
       </div>
 
-      {/* Dice roller */}
-      {showTools && (
+      {/* Tools tabs */}
+      <div className="tools-tabs">
+        {TOOLS.map(tool => (
+          <button
+            key={tool}
+            className={`tool-tab ${activeTool === tool ? 'active' : ''}`}
+            onClick={() => setActiveTool(prev => prev === tool ? null : tool)}
+          >
+            {TOOL_LABELS[tool]}
+          </button>
+        ))}
+      </div>
+
+      {activeTool && (
         <div className="tools-panel">
-          <div className="tools-section">
-            <span className="tools-label">Dice Roller</span>
-            <DiceRoller />
-          </div>
+          {activeTool === 'dice' && <DiceRoller />}
+          {activeTool === 'cards' && <CardLookup />}
+          {activeTool === 'dungeons' && <DungeonTracker players={players} />}
         </div>
       )}
 
@@ -151,11 +231,15 @@ export default function GameBoard({ config, onEndGame }) {
             allPlayers={players}
             isCommander={isCommander}
             isActiveTurn={player.id === activePlayer?.id && !player.eliminated}
+            isMonarch={monarchId === player.id}
+            hasInitiative={initiativeId === player.id}
             onAdjustLife={adjustLife}
             onAdjustPoison={adjustPoison}
             onAdjustCounter={adjustCounter}
             onAdjustCommanderDamage={adjustCommanderDamage}
             onToggleEliminated={toggleEliminated}
+            onGiveMonarch={giveMonarch}
+            onGiveInitiative={giveInitiative}
           />
         ))}
       </div>
@@ -166,14 +250,50 @@ export default function GameBoard({ config, onEndGame }) {
         </div>
       )}
 
-      {showEndConfirm && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h3>End Game?</h3>
-            <p>This will save the game to history and return to setup.</p>
+      {/* End game modal */}
+      {showEndModal && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowEndModal(false)}>
+          <div className="modal end-modal">
+            <h3>End Game</h3>
+
+            <div className="modal-section">
+              <label className="modal-label">Who won? <span>(optional)</span></label>
+              <div className="winner-picker">
+                <button
+                  className={`winner-btn ${selectedWinner === null ? 'selected' : ''}`}
+                  onClick={() => setSelectedWinner(null)}
+                >
+                  No winner / Draw
+                </button>
+                {players.map(p => (
+                  <button
+                    key={p.id}
+                    className={`winner-btn ${selectedWinner === p.id ? 'selected' : ''}`}
+                    style={selectedWinner === p.id ? { borderColor: p.color, background: `${p.color}22` } : {}}
+                    onClick={() => setSelectedWinner(p.id)}
+                  >
+                    <span className="winner-dot" style={{ background: p.color }} />
+                    {p.name}
+                    {p.eliminated ? ' (out)' : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="modal-section">
+              <label className="modal-label">Notes <span>(optional)</span></label>
+              <textarea
+                className="notes-input"
+                placeholder="Add notes about this game..."
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+
             <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setShowEndConfirm(false)}>Cancel</button>
-              <button className="btn-danger" onClick={() => onEndGame(players)}>End Game</button>
+              <button className="btn-secondary" onClick={() => setShowEndModal(false)}>Cancel</button>
+              <button className="btn-accent" onClick={handleEndGame}>Save & End</button>
             </div>
           </div>
         </div>

@@ -6,7 +6,7 @@ import { saveGame } from './utils/history'
 import './App.css'
 
 export default function App() {
-  const [screen, setScreen] = useState('setup') // 'setup' | 'game' | 'history'
+  const [screen, setScreen] = useState('setup')
   const [gameConfig, setGameConfig] = useState(null)
 
   const startGame = useCallback((config) => {
@@ -14,8 +14,8 @@ export default function App() {
     setScreen('game')
   }, [])
 
-  const endGame = useCallback((players) => {
-    saveGame({ config: gameConfig, players, endedAt: Date.now() })
+  const endGame = useCallback((players, winnerId, notes) => {
+    saveGame({ config: gameConfig, players, endedAt: Date.now(), winnerId: winnerId ?? null, notes: notes ?? '' })
     setScreen('setup')
     setGameConfig(null)
   }, [gameConfig])
