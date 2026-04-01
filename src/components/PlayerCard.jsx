@@ -2,8 +2,6 @@ import { useState, useRef } from 'react'
 import { EMBLEMS, STATUS_EMBLEMS, PW_EMBLEMS } from '../data/emblems'
 import './PlayerCard.css'
 
-const QUICK_AMOUNTS = [1, 5, 10]
-
 const EXTRA_COUNTERS = [
   { key: 'experience', label: 'Exp',   color: '#e09a3a' },
   { key: 'energy',     label: 'Nrg',   color: '#4a9fd4' },
@@ -47,6 +45,8 @@ const ALL_TOKENS = [
 
 // Widgets that persist on the card once added
 const PERSISTENT_WIDGETS = [
+  { key: 'quick5',   label: '⚡ Quick ±5 Life' },
+  { key: 'quick10',  label: '⚡ Quick ±10 Life' },
   { key: 'poison',   label: '☠ Poison' },
   { key: 'counters', label: '◈ Counters' },
   { key: 'tokens',   label: '🎭 Tokens' },
@@ -210,23 +210,33 @@ export default function PlayerCard({
           )}
         </div>
 
-        {/* Quick adjust */}
-        <div className="life-controls">
-          <div className="control-row">
-            {QUICK_AMOUNTS.map(amt => (
-              <button key={amt} className="ctrl-btn minus"
-                onClick={() => onAdjustLife(player.id, -amt)}
-                disabled={isEliminated}>−{amt}</button>
-            ))}
+        {/* Quick ±5 widget */}
+        {activeWidgets.includes('quick5') && (
+          <div className="widget-block">
+            <div className="widget-header">
+              <span className="widget-label">Quick ±5</span>
+              <button className="widget-remove" onClick={() => onToggleWidget(player.id, 'quick5')}>✕</button>
+            </div>
+            <div className="control-row">
+              <button className="ctrl-btn minus" onClick={() => onAdjustLife(player.id, -5)} disabled={isEliminated}>−5</button>
+              <button className="ctrl-btn plus"  onClick={() => onAdjustLife(player.id,  5)} disabled={isEliminated}>+5</button>
+            </div>
           </div>
-          <div className="control-row">
-            {QUICK_AMOUNTS.map(amt => (
-              <button key={amt} className="ctrl-btn plus"
-                onClick={() => onAdjustLife(player.id, amt)}
-                disabled={isEliminated}>+{amt}</button>
-            ))}
+        )}
+
+        {/* Quick ±10 widget */}
+        {activeWidgets.includes('quick10') && (
+          <div className="widget-block">
+            <div className="widget-header">
+              <span className="widget-label">Quick ±10</span>
+              <button className="widget-remove" onClick={() => onToggleWidget(player.id, 'quick10')}>✕</button>
+            </div>
+            <div className="control-row">
+              <button className="ctrl-btn minus" onClick={() => onAdjustLife(player.id, -10)} disabled={isEliminated}>−10</button>
+              <button className="ctrl-btn plus"  onClick={() => onAdjustLife(player.id,  10)} disabled={isEliminated}>+10</button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Custom adjust inline */}
         {customOpen && (

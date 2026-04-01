@@ -28,6 +28,12 @@ export default function App() {
     setGameConfig(null)
   }, [gameConfig])
 
+  const discardGame = useCallback(() => {
+    setLastConfig(gameConfig)
+    setScreen('setup')
+    setGameConfig(null)
+  }, [gameConfig])
+
   return (
     <div className="app">
       <header className="app-header">
@@ -58,7 +64,7 @@ export default function App() {
       </header>
       <main>
         {screen === 'setup' && <GameSetup onStart={startGame} lastConfig={lastConfig} />}
-        {screen === 'game' && <GameBoard config={gameConfig} onEndGame={endGame} />}
+        {screen === 'game' && <GameBoard config={gameConfig} onEndGame={endGame} onDiscardGame={discardGame} />}
         {screen === 'history' && <GameHistory />}
       </main>
     </div>

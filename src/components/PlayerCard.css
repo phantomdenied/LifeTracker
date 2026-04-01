@@ -42,8 +42,9 @@
   border-radius: 10px;
 }
 
-/* Make all card children sit above the art layers */
-.player-card.has-art > * {
+/* Make all card children sit above the art layers — but NOT partner-art-bg
+   which must stay position:absolute so its inset:0 works */
+.player-card.has-art > *:not(.partner-art-bg) {
   position: relative;
   z-index: 1;
 }

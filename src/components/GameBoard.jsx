@@ -31,7 +31,7 @@ function initPlayers(config) {
 const TOOLS = ['dice', 'cards', 'dungeons', 'planechase']
 const TOOL_LABELS = { dice: 'Dice & Coins', cards: 'Card Lookup', dungeons: 'Dungeons', planechase: 'Planechase' }
 
-export default function GameBoard({ config, onEndGame }) {
+export default function GameBoard({ config, onEndGame, onDiscardGame }) {
   const [players, setPlayers] = useState(() => initPlayers(config))
   const [undoStack, setUndoStack] = useState([])
   const [turnIndex, setTurnIndex] = useState(0)
@@ -421,6 +421,7 @@ export default function GameBoard({ config, onEndGame }) {
 
             <div className="modal-actions">
               <button className="btn-secondary" onClick={() => setShowEndModal(false)}>Cancel</button>
+              <button className="btn-secondary" onClick={onDiscardGame}>End, No Save</button>
               <button className="btn-accent" onClick={handleEndGame}>Save & End</button>
             </div>
           </div>

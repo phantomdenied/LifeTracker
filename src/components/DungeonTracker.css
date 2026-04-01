@@ -143,9 +143,9 @@
   opacity: 0.5;
 }
 
-/* Card image column */
+/* Card image column — about half the panel */
 .dungeon-card-col {
-  width: 120px;
+  width: 45%;
   flex-shrink: 0;
 }
 

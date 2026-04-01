@@ -19,7 +19,12 @@
   border-left-color: var(--warning);
 }
 
-/* Image — plane cards are landscape (wider than tall) */
+/* Image — plane cards are landscape. Scryfall stores them as portrait,
+   so we rotate the img -90deg inside a landscape-shaped container.
+   Math: container W×H (ratio 88:63). After rotate(-90deg):
+     css_height → visual_width, css_width → visual_height.
+   Set css_width = H = 71.59% of W, css_height = W = 139.68% of H.
+   translate(-50%,-50%) + left/top 50% centres the element. */
 .plane-img-wrap {
   position: relative;
   width: 100%;
@@ -30,11 +35,13 @@
 }
 
 .plane-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
-  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 71.59%;    /* = 63/88 × 100% — becomes visual height after rotation */
+  height: 139.68%;  /* = 88/63 × 100% — becomes visual width after rotation */
+  object-fit: cover;
+  transform: translate(-50%, -50%) rotate(-90deg);
 }
 
 .plane-img-skeleton {
