@@ -19,11 +19,14 @@ function defaultPlayers(count, startingLife) {
     color: PRESET_COLORS[i % PRESET_COLORS.length],
     commanderName: null,
     commanderArt: null,
+    commanderName2: null,
+    commanderArt2: null,
+    hasPartner: false,
     startingLife,
   }))
 }
 
-export default function GameSetup({ onStart }) {
+export default function GameSetup({ onStart, lastConfig }) {
   const [formatId, setFormatId] = useState('commander')
   const [playerCount, setPlayerCount] = useState(4)
   const [players, setPlayers] = useState(() => defaultPlayers(4, 40))
@@ -141,13 +144,36 @@ export default function GameSetup({ onStart }) {
 
                 {isCommander && (
                   <div className="commander-row">
-                    <span className="commander-label">Commander</span>
+                    <div className="commander-row-header">
+                      <span className="commander-label">Commander</span>
+                      <button
+                        className={`partner-toggle ${p.hasPartner ? 'active' : ''}`}
+                        onClick={() => updatePlayer(p.id, {
+                          hasPartner: !p.hasPartner,
+                          commanderName2: null,
+                          commanderArt2: null,
+                        })}
+                      >
+                        {p.hasPartner ? '✕ Partner' : '+ Partner'}
+                      </button>
+                    </div>
                     <CommanderSearch
                       value={p.commanderName}
                       artUrl={p.commanderArt}
                       onSelect={(name, art) => updatePlayer(p.id, { commanderName: name, commanderArt: art })}
                       onClear={() => updatePlayer(p.id, { commanderName: null, commanderArt: null })}
                     />
+                    {p.hasPartner && (
+                      <>
+                        <span className="commander-label" style={{ marginTop: 4 }}>Partner</span>
+                        <CommanderSearch
+                          value={p.commanderName2}
+                          artUrl={p.commanderArt2}
+                          onSelect={(name, art) => updatePlayer(p.id, { commanderName2: name, commanderArt2: art })}
+                          onClear={() => updatePlayer(p.id, { commanderName2: null, commanderArt2: null })}
+                        />
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -155,9 +181,20 @@ export default function GameSetup({ onStart }) {
           </div>
         </div>
 
-        <button className="start-btn" onClick={() => onStart({ format, players })}>
-          Start Game
-        </button>
+        <div className="start-row">
+          <button className="start-btn" onClick={() => onStart({ format, players })}>
+            Start Game
+          </button>
+          {lastConfig && (
+            <button
+              className="rematch-btn"
+              onClick={() => onStart(lastConfig)}
+              title="Same players, same commanders"
+            >
+              ↺ Rematch
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

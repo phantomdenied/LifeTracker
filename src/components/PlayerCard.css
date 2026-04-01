@@ -21,7 +21,7 @@
   background-image: var(--art-url);
   background-size: cover;
   background-position: center 15%;
-  opacity: 0.18;
+  opacity: 0.42;
   z-index: 0;
   pointer-events: none;
   border-radius: 10px;
@@ -33,9 +33,9 @@
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgba(26, 29, 39, 0.55) 0%,
-    rgba(26, 29, 39, 0.75) 60%,
-    rgba(26, 29, 39, 0.92) 100%
+    rgba(15, 17, 23, 0.45) 0%,
+    rgba(15, 17, 23, 0.60) 45%,
+    rgba(15, 17, 23, 0.88) 100%
   );
   z-index: 0;
   pointer-events: none;
@@ -46,6 +46,37 @@
 .player-card.has-art > * {
   position: relative;
   z-index: 1;
+}
+
+/* Partner: second art on the right half */
+.player-card.has-art2::before {
+  background-image:
+    linear-gradient(to bottom right, transparent 50%, rgba(0,0,0,0.6) 50%),
+    var(--art-url);
+}
+
+.player-card.has-art.has-art2 {
+  --combined-bg: var(--art-url2);
+}
+
+/* Use a pseudo-element layered on top of ::before for second art */
+.player-card.has-art.has-art2::before {
+  background-image: var(--art-url);
+  clip-path: polygon(0 0, 55% 0, 45% 100%, 0 100%);
+}
+
+/* We need a real element for the second art since CSS only gives us one ::before */
+.partner-art-bg {
+  position: absolute;
+  inset: 0;
+  background-image: var(--art-url2);
+  background-size: cover;
+  background-position: center 15%;
+  opacity: 0.42;
+  clip-path: polygon(55% 0, 100% 0, 100% 100%, 45% 100%);
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 10px;
 }
 
 .player-card.eliminated {
@@ -184,6 +215,67 @@
 .life-display {
   text-align: center;
   line-height: 1;
+  position: relative;
+}
+
+/* Tap zones — invisible buttons covering top/bottom half of life display */
+.tap-zone {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  z-index: 2;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tap-plus { top: 0; border-radius: 8px 8px 0 0; }
+.tap-minus { bottom: 0; border-radius: 0 0 8px 8px; }
+
+.tap-plus:active { background: rgba(76, 175, 130, 0.15); }
+.tap-minus:active { background: rgba(224, 82, 82, 0.15); }
+.tap-zone:disabled { cursor: not-allowed; }
+
+/* Subtle hint overlay */
+.tap-zone-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  pointer-events: none;
+  padding: 4px 6px;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.life-display:hover .tap-zone-hint,
+.life-display:focus-within .tap-zone-hint {
+  opacity: 1;
+}
+
+.tap-hint-plus, .tap-hint-minus {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.35;
+}
+
+.tap-hint-plus { color: var(--success); }
+.tap-hint-minus { color: var(--danger); }
+
+.tap-hint-divider {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: var(--border);
+  opacity: 0.5;
 }
 
 .life-number {
@@ -192,6 +284,9 @@
   color: var(--text-h);
   display: block;
   line-height: 1;
+  position: relative;
+  z-index: 0;
+  pointer-events: none;
 }
 
 @media (max-width: 480px) {
@@ -407,6 +502,37 @@
   font-size: 16px;
   font-weight: 700;
   color: var(--text-h);
+}
+
+/* Token tray */
+.tokens-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.token-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.token-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.token-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* Commander damage */

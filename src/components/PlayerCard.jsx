@@ -9,6 +9,21 @@ const EXTRA_COUNTERS = [
   { key: 'plusone', label: '+1/+1', color: '#4caf82' },
 ]
 
+const TOKENS = [
+  { key: 'treasure', label: '💰 Treasure' },
+  { key: 'clue',     label: '🔍 Clue' },
+  { key: 'food',     label: '🍎 Food' },
+  { key: 'blood',    label: '🩸 Blood' },
+  { key: 'map',      label: '🗺 Map' },
+  { key: 'soldier',  label: '⚔ Soldier' },
+  { key: 'zombie',   label: '💀 Zombie' },
+  { key: 'goblin',   label: '👺 Goblin' },
+  { key: 'saproling',label: '🍄 Saproling' },
+  { key: 'wolf',     label: '🐺 Wolf' },
+  { key: 'thopter',  label: '✈ Thopter' },
+  { key: 'spirit',   label: '👻 Spirit' },
+]
+
 export default function PlayerCard({
   player,
   allPlayers,
@@ -26,6 +41,7 @@ export default function PlayerCard({
 }) {
   const [showCmdDmg, setShowCmdDmg] = useState(false)
   const [showExtras, setShowExtras] = useState(false)
+  const [showTokens, setShowTokens] = useState(false)
   const [customInput, setCustomInput] = useState('')
   const inputRef = useRef(null)
 
@@ -56,12 +72,12 @@ export default function PlayerCard({
 
   const recentLog = (player.lifeLog ?? []).slice(0, 5)
 
-  const artStyle = player.commanderArt
-    ? {
-        '--player-color': player.color,
-        '--art-url': `url(${player.commanderArt})`,
-      }
-    : { '--player-color': player.color }
+  const hasArt = !!(player.commanderArt || player.commanderArt2)
+  const artStyle = {
+    '--player-color': player.color,
+    ...(player.commanderArt  ? { '--art-url':  `url(${player.commanderArt})`  } : {}),
+    ...(player.commanderArt2 ? { '--art-url2': `url(${player.commanderArt2})` } : {}),
+  }
 
   return (
     <div
@@ -70,10 +86,14 @@ export default function PlayerCard({
         isEliminated ? 'eliminated' : '',
         isDead && !isEliminated ? 'dead' : '',
         isActiveTurn ? 'active-turn' : '',
-        player.commanderArt ? 'has-art' : '',
+        hasArt ? 'has-art' : '',
+        player.commanderArt2 ? 'has-art2' : '',
       ].filter(Boolean).join(' ')}
       style={artStyle}
     >
+      {/* Partner art second layer */}
+      {player.commanderArt2 && <div className="partner-art-bg" />}
+
       {/* Header */}
       <div className="player-header">
         {isActiveTurn && <span className="turn-pip" title="Active turn" />}
@@ -117,8 +137,25 @@ export default function PlayerCard({
         <div className="notice danger">10 poison counters</div>
       )}
 
-      {/* Life total */}
+      {/* Life total with tap zones */}
       <div className="life-display">
+        <button
+          className="tap-zone tap-plus"
+          onClick={() => !isEliminated && onAdjustLife(player.id, 1)}
+          disabled={isEliminated}
+          aria-label="+1 life"
+        />
+        <button
+          className="tap-zone tap-minus"
+          onClick={() => !isEliminated && onAdjustLife(player.id, -1)}
+          disabled={isEliminated}
+          aria-label="-1 life"
+        />
+        <div className="tap-zone-hint">
+          <span className="tap-hint-plus">+1</span>
+          <span className="tap-hint-divider" />
+          <span className="tap-hint-minus">−1</span>
+        </div>
         <span className="life-number">{player.life}</span>
         {recentLog.length > 0 && (
           <div className="life-log">
@@ -237,6 +274,32 @@ export default function PlayerCard({
                 disabled={isEliminated}>+</button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Token tray */}
+      <button className="section-toggle" onClick={() => setShowTokens(v => !v)}>
+        Tokens {showTokens ? '▲' : '▼'}
+      </button>
+      {showTokens && (
+        <div className="tokens-grid">
+          {TOKENS.map(({ key, label }) => {
+            const count = player.tokens?.[key] ?? 0
+            return (
+              <div key={key} className="token-item">
+                <span className="token-label">{label}</span>
+                <div className="token-controls">
+                  <button className="counter-adj"
+                    onClick={() => onAdjustCounter(player.id, `token_${key}`, -1)}
+                    disabled={isEliminated || count <= 0}>−</button>
+                  <span className="extra-val">{count}</span>
+                  <button className="counter-adj"
+                    onClick={() => onAdjustCounter(player.id, `token_${key}`, 1)}
+                    disabled={isEliminated}>+</button>
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 

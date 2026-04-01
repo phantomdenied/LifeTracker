@@ -3,6 +3,7 @@ import PlayerCard from './PlayerCard'
 import DiceRoller from './DiceRoller'
 import DungeonTracker from './DungeonTracker'
 import CardLookup from './CardLookup'
+import Planechase from './Planechase'
 import { useWakeLock } from '../hooks/useWakeLock'
 import './GameBoard.css'
 
@@ -16,13 +17,14 @@ function initPlayers(config) {
     poison: 0,
     commanderCasts: 0,
     counters: { experience: 0, energy: 0, plusone: 0 },
+    tokens: {},
     lifeLog: [],
     eliminated: false,
   }))
 }
 
-const TOOLS = ['dice', 'cards', 'dungeons']
-const TOOL_LABELS = { dice: 'Dice & Coins', cards: 'Card Lookup', dungeons: 'Dungeons' }
+const TOOLS = ['dice', 'cards', 'dungeons', 'planechase']
+const TOOL_LABELS = { dice: 'Dice & Coins', cards: 'Card Lookup', dungeons: 'Dungeons', planechase: 'Planechase' }
 
 export default function GameBoard({ config, onEndGame }) {
   const [players, setPlayers] = useState(() => initPlayers(config))
@@ -111,6 +113,10 @@ export default function GameBoard({ config, onEndGame }) {
       if (p.id !== playerId) return p
       if (key === 'commanderCasts') {
         return { ...p, commanderCasts: Math.max(0, (p.commanderCasts ?? 0) + delta) }
+      }
+      if (key.startsWith('token_')) {
+        const tkey = key.slice(6)
+        return { ...p, tokens: { ...p.tokens, [tkey]: Math.max(0, (p.tokens?.[tkey] ?? 0) + delta) } }
       }
       return { ...p, counters: { ...p.counters, [key]: Math.max(0, (p.counters?.[key] ?? 0) + delta) } }
     }))
@@ -296,6 +302,7 @@ export default function GameBoard({ config, onEndGame }) {
           {activeTool === 'dice' && <DiceRoller />}
           {activeTool === 'cards' && <CardLookup />}
           {activeTool === 'dungeons' && <DungeonTracker players={players} />}
+          {activeTool === 'planechase' && <Planechase />}
         </div>
       )}
 

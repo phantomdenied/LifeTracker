@@ -8,6 +8,7 @@ import './App.css'
 export default function App() {
   const [screen, setScreen] = useState('setup')
   const [gameConfig, setGameConfig] = useState(null)
+  const [lastConfig, setLastConfig] = useState(null)
 
   const startGame = useCallback((config) => {
     setGameConfig(config)
@@ -16,6 +17,7 @@ export default function App() {
 
   const endGame = useCallback((players, winnerId, notes) => {
     saveGame({ config: gameConfig, players, endedAt: Date.now(), winnerId: winnerId ?? null, notes: notes ?? '' })
+    setLastConfig(gameConfig)
     setScreen('setup')
     setGameConfig(null)
   }, [gameConfig])
@@ -42,7 +44,7 @@ export default function App() {
         </nav>
       </header>
       <main>
-        {screen === 'setup' && <GameSetup onStart={startGame} />}
+        {screen === 'setup' && <GameSetup onStart={startGame} lastConfig={lastConfig} />}
         {screen === 'game' && <GameBoard config={gameConfig} onEndGame={endGame} />}
         {screen === 'history' && <GameHistory />}
       </main>
