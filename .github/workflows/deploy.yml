@@ -24,7 +24,23 @@ jobs:
 
       - name: Fix smart quotes
         run: |
-          find src -name "*.jsx" -o -name "*.js" | xargs sed -i "s/\u2018/'/g; s/\u2019/'/g; s/\u201c/\"/g; s/\u201d/\"/g"
+          python3 - <<'PYEOF'
+          import os, glob
+          replacements = {
+              '\u2018': "'", '\u2019': "'",
+              '\u201c': '"', '\u201d': '"',
+              '\u2032': "'", '\u2033': '"',
+          }
+          for pattern in ['src/**/*.jsx', 'src/**/*.js', 'src/*.jsx', 'src/*.js']:
+              for path in glob.glob(pattern, recursive=True):
+                  text = open(path, encoding='utf-8').read()
+                  fixed = text
+                  for bad, good in replacements.items():
+                      fixed = fixed.replace(bad, good)
+                  if fixed != text:
+                      open(path, 'w', encoding='utf-8').write(fixed)
+                      print(f'Fixed: {path}')
+          PYEOF
 
       - name: Build
         run: npm run build
