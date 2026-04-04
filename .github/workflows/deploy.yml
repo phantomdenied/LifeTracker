@@ -1,0 +1,55 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fix smart quotes
+        run: |
+          python3 - <<'PYEOF'
+          import glob
+          replacements = {
+              '\u2018': "'", '\u2019': "'",
+              '\u201a': "'", '\u201b': "'",
+              '\u201c': '"', '\u201d': '"',
+              '\u201e': '"', '\u201f': '"',
+              '\u2032': "'", '\u2033': '"',
+              '\u2026': '...',
+          }
+          for pattern in ['src/**/*.jsx', 'src/**/*.js']:
+              for path in glob.glob(pattern, recursive=True):
+                  text = open(path, encoding='utf-8').read()
+                  fixed = text
+                  for bad, good in replacements.items():
+                      fixed = fixed.replace(bad, good)
+                  if fixed != text:
+                      open(path, 'w', encoding='utf-8').write(fixed)
+                      print('Fixed: ' + path)
+          PYEOF
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
