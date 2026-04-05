@@ -1,0 +1,55 @@
+
+.pd-body {
+  display: block;
+}
+
+.dungeon-card-col {
+  width: 100%;
+}
+
+.dungeon-card-wrap {
+  position: relative;
+}
+
+/* overlay */
+.dungeon-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.dungeon-overlay button {
+  position: absolute;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background: transparent;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+/* states */
+.dungeon-overlay button.selectable {
+  border: 2px solid rgba(250, 204, 21, 0.9);
+  background: rgba(250, 204, 21, 0.12);
+  animation: pulse 1.6s infinite;
+}
+
+.dungeon-overlay button.current {
+  border: 2px solid rgba(167, 139, 250, 0.95);
+  background: rgba(167, 139, 250, 0.25);
+}
+
+.dungeon-overlay button.visited {
+  border: 2px solid rgba(52, 211, 153, 0.9);
+  background: rgba(52, 211, 153, 0.12);
+}
+
+.dungeon-overlay button:active {
+  transform: scale(0.97);
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(250,204,21,0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(250,204,21,0); }
+  100% { box-shadow: 0 0 0 0 rgba(250,204,21,0); }
+}
